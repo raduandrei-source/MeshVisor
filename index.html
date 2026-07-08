@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeshVisor Patch — User Guide</title>
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --panel: #1c211f;
+    --panel-text: #cfd6d2;
+    --panel-text-dim: #7d8985;
+    --accent: #3f6b5e;
+    --accent-bright: #4f8a78;
+    --ink: #20241f;
+    --ink-soft: #4a4f4a;
+    --rule: #dcd7ca;
+    --code-bg: #ece7d9;
+    --warn: #9c5a2e;
+    --sidebar-w: 300px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.65;
+  }
+
+  /* ---------------- Sidebar ---------------- */
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--panel);
+    color: var(--panel-text);
+    overflow-y: auto;
+    padding: 28px 0 40px 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  #sidebar::-webkit-scrollbar { width: 8px; }
+  #sidebar::-webkit-scrollbar-thumb { background: #333a37; border-radius: 4px; }
+
+  .brand {
+    padding: 0 24px 20px 24px;
+    border-bottom: 1px solid #33403a;
+    margin-bottom: 14px;
+  }
+  .brand .name {
+    font-family: "Iowan Old Style", Georgia, serif;
+    font-size: 21px;
+    color: #eef2ef;
+    letter-spacing: 0.3px;
+  }
+  .brand .tag {
+    font-size: 12px;
+    color: var(--panel-text-dim);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+
+  nav.toc { padding: 0 12px; }
+  nav.toc .group-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.3px;
+    color: var(--panel-text-dim);
+    padding: 16px 12px 6px 12px;
+  }
+  nav.toc a {
+    display: block;
+    padding: 7px 12px;
+    color: var(--panel-text);
+    text-decoration: none;
+    font-size: 14px;
+    border-left: 2px solid transparent;
+    border-radius: 0 4px 4px 0;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  nav.toc a:hover {
+    background: #262e2a;
+    color: #fff;
+  }
+  nav.toc a.active {
+    background: #24352e;
+    color: #bfe8d8;
+    border-left-color: var(--accent-bright);
+    font-weight: 600;
+  }
+
+  /* ---------------- Main content ---------------- */
+  #content {
+    margin-left: var(--sidebar-w);
+    max-width: 860px;
+    padding: 60px 56px 120px 56px;
+  }
+
+  h1 {
+    font-size: 40px;
+    margin: 0 0 6px 0;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+  }
+  .subtitle {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink-soft);
+    font-size: 16px;
+    margin-bottom: 50px;
+  }
+
+  section { margin-bottom: 64px; scroll-margin-top: 24px; }
+  section h2 {
+    font-size: 27px;
+    margin: 0 0 18px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--rule);
+    color: var(--ink);
+  }
+  section h3 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 18px;
+    color: var(--accent);
+    margin: 28px 0 8px 0;
+    letter-spacing: 0.1px;
+  }
+  section h4 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--ink-soft);
+    margin: 22px 0 6px 0;
+  }
+
+  p { margin: 10px 0; }
+  ul, ol { margin: 8px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  code, .kbd {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    color: #3a3f2e;
+  }
+
+  .callout {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14.5px;
+    background: #eef4f0;
+    border-left: 3px solid var(--accent);
+    padding: 12px 18px;
+    border-radius: 0 6px 6px 0;
+    margin: 16px 0;
+  }
+  .callout.warn {
+    background: #f7ede3;
+    border-left-color: var(--warn);
+  }
+  .callout b { color: var(--ink); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14.5px;
+    margin: 14px 0;
+  }
+  th, td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  th {
+    color: var(--ink-soft);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11.5px;
+    letter-spacing: 0.6px;
+  }
+
+  .tool-card {
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    background: #fffdf8;
+  }
+  .tool-card .tool-name {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .tool-card p { font-size: 14.5px; margin: 6px 0 0 0; }
+
+  .flow {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin: 18px 0;
+  }
+  .flow .step {
+    background: var(--accent);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .flow .arrow { color: var(--ink-soft); font-size: 18px; }
+
+  hr.section-rule {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 40px 0;
+  }
+
+  .badge {
+    display: inline-block;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 9px;
+    border-radius: 10px;
+    margin-left: 6px;
+  }
+  .badge.default { background: #dcefe5; color: var(--accent); }
+  .badge.slow { background: #f7ede3; color: var(--warn); }
+
+  footer {
+    margin-left: var(--sidebar-w);
+    padding: 30px 56px 60px 56px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
+    color: var(--panel-text-dim);
+    border-top: 1px solid var(--rule);
+  }
+
+  @media (max-width: 900px) {
+    #sidebar { display: none; }
+    #content, footer { margin-left: 0; padding: 30px 24px 100px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="brand">
+    <div class="name">MeshVisor Patch</div>
+    <div class="tag">User Guide · v1.0</div>
+  </div>
+  <nav class="toc" id="toc">
+    <a href="#intro">What It Is</a>
+    <a href="#philosophy">Philosophy</a>
+    <a href="#audience">Who It's For</a>
+    <a href="#install">Installation</a>
+
+    <div class="group-label">Workflow</div>
+    <a href="#workflow">General Flow</a>
+    <a href="#prepare-tab">Prepare Tab</a>
+    <a href="#patch-tab">Patch Tab</a>
+    <a href="#remesh-tab">Remesh Tab</a>
+    <a href="#settings-popover">Settings</a>
+    <a href="#finish-popover">Finish</a>
+
+    <div class="group-label">Key Concepts</div>
+    <a href="#presets">Presets</a>
+    <a href="#density-modes">Density Modes</a>
+    <a href="#surface-fit">Surface Fit</a>
+    <a href="#seam-material">Seam &amp; Material</a>
+
+    <div class="group-label">Using It Well</div>
+    <a href="#optimization-tips">Workflow Tips</a>
+    <a href="#scenarios">Common Scenarios</a>
+    <a href="#troubleshooting">Troubleshooting</a>
+    <a href="#debug-mode">Debug Mode</a>
+
+    <div class="group-label">Reference</div>
+    <a href="#glossary">Glossary</a>
+    <a href="#changelog">Changelog</a>
+  </nav>
+</div>
+
+<div id="content">
+
+  <h1>MeshVisor Patch</h1>
+  <div class="subtitle">Hole repair and mesh cleanup for 3D scans, built for Blender.</div>
+
+  <section id="intro">
+    <h2>What It Is</h2>
+    <p>
+      MeshVisor Patch is a Blender addon built around one specific problem: 3D scans and
+      photogrammetry reconstructions almost always come with holes, non-manifold junctions, and
+      degenerate geometry — places the camera never saw, spots where reconstruction failed locally,
+      or leftover debris from processing. Fixing this by hand is slow, repetitive, and takes real
+      topology experience.
+    </p>
+    <p>
+      The addon automates the whole chain: detecting a hole's boundary, filling it with triangles
+      that match the surrounding mesh's density and curvature, transferring real surface detail onto
+      the new geometry, and general mesh cleanup before and after.
+    </p>
+    <div class="callout">
+      <b>In short:</b> select a hole's edge, click <code>Mark Hole Boundary</code>, click
+      <code>Patch</code>. Density, curvature, materials, and the seam are all handled automatically,
+      with fine control available anywhere you want to step in.
+    </div>
+  </section>
+
+  <section id="philosophy">
+    <h2>Philosophy</h2>
+
+    <h3>Grounded in the literature</h3>
+    <p>
+      Every significant algorithm in this addon comes from published work on geometry processing:
+      isotropic remeshing (Botsch &amp; Kobbelt), curvature-adaptive remeshing (extensions such as
+      Lv et al., 2022), quadric error metrics for simplification (Garland &amp; Heckbert, 1997), and
+      biharmonic smoothing for seams (an iterative approximation of the fairing approach used in
+      Liepa, 2003). Early versions of some of these tools used simpler, self-designed heuristics —
+      those were replaced once testing showed they didn't hold up.
+    </p>
+
+    <h3>Safety over sophistication</h3>
+    <p>
+      Any step that modifies geometry has a safe fallback if something doesn't converge: an unstable
+      collapse position falls back to the edge midpoint, a degenerate curvature calculation gets
+      simply skipped. Every operator can be undone with a single
+      <span class="kbd">Ctrl+Z</span>.
+    </p>
+
+    <h3>Progressive disclosure</h3>
+    <p>
+      The interface shows only what's relevant to the current step. Advanced tools — a manual
+      geometry source, the sharp-edge angle threshold, the debug log — stay available but tucked
+      away until you go looking for them, so each tab doesn't turn into a wall of options.
+    </p>
+
+    <h3>Verified before it reaches you</h3>
+    <p>
+      Changes to the addon go through a verification pass (compilation, import checks, static
+      analysis for undefined names) before being delivered. That doesn't replace real testing inside
+      Blender, but it catches a meaningful share of structural mistakes early.
+    </p>
+  </section>
+
+  <section id="audience">
+    <h2>Who It's For</h2>
+
+    <h3>Good fit</h3>
+    <ul>
+      <li><b>Photogrammetry scans</b> — objects, statues, artifacts, terrain/archaeological scans with holes from camera blind spots.</li>
+      <li><b>Digital restoration and heritage conservation</b> — where both filling the gap correctly and being able to flag what was reconstructed matter.</li>
+      <li><b>General cleanup of raw scan meshes</b> — non-manifold geometry, duplicates, degenerate slivers left over from processing.</li>
+      <li><b>Organic meshes of small to medium size</b> — holes up to a few thousand or a few tens of thousands of faces process at a reasonable speed.</li>
+    </ul>
+
+    <h3>Less suited for</h3>
+    <ul>
+      <li><b>Precision CAD modeling</b> — for exact geometric shapes (cylinders, planes, parametric relationships), Blender's native Boolean/Solidify tools or dedicated CAD software remain the better choice.</li>
+      <li><b>Very large holes</b> (upward of 50,000-70,000 selected faces) — the current architecture (pure Python, element by element) has a real speed ceiling; splitting a large hole into smaller sections works better.</li>
+      <li><b>Reconstruction straight from a raw point cloud</b> — the addon operates on an already-triangulated mesh.</li>
+    </ul>
+  </section>
+
+  <section id="install">
+    <h2>Installation</h2>
+    <ol>
+      <li>If you have an earlier version installed: <code>Edit → Preferences → Add-ons</code>, find "MeshVisor Patch", click <b>Remove</b> — this fully clears the old folder from disk.</li>
+      <li>Install the new <code>.zip</code>: drag-and-drop it directly into the Blender window, or use <code>Install from Disk</code> in the same menu.</li>
+      <li>Enable the addon (checkbox next to its name).</li>
+      <li>The panel appears in the 3D viewport sidebar (<span class="kbd">N</span>), under the <b>MeshVisor</b> tab.</li>
+    </ol>
+    <div class="callout warn">
+      <b>Installing a new zip over an old one without Removing it first</b> can leave stale files
+      behind, since the addon is now a folder containing several files. If tools seem
+      missing or behavior looks outdated after an update, check this step first.
+    </div>
+  </section>
+
+  <hr class="section-rule">
+
+  <section id="workflow">
+    <h2>General Flow</h2>
+    <div class="flow">
+      <div class="step">Prepare</div><span class="arrow">→</span>
+      <div class="step">Patch</div><span class="arrow">→</span>
+      <div class="step">Remesh</div><span class="arrow">→</span>
+      <div class="step">Finish</div>
+    </div>
+    <p>
+      The three main tabs (Prepare, Patch, Remesh) map to workflow stages.
+      <b>Settings</b> and <b>Finish</b> live in small popover windows, opened from icons in the
+      header, so they don't compete for space in the main tab row.
+    </p>
+    <ol>
+      <li><b>Prepare</b> — check the mesh's health, repair junctions and non-manifold geometry, clean up loose parts.</li>
+      <li><b>Patch</b> — mark a hole's boundary and fill it.</li>
+      <li><b>Remesh</b> — adjust triangle density on any current selection, whether or not it's a fresh patch.</li>
+      <li><b>Finish</b> — final checks: normals, remaining loose geometry, one last weld pass.</li>
+    </ol>
+  </section>
+
+  <section id="prepare-tab">
+    <h2>Prepare Tab</h2>
+    <p>This is where the mesh gets ready before marking a hole, or where general cleanup happens any time.</p>
+
+    <h3>Mesh health</h3>
+    <div class="tool-card">
+      <span class="tool-name">Analyze</span>
+      <p>
+        Scans the mesh once, only when you click it, so it won't slow the UI down while the panel just sits open
+        and shows a plain-language summary: whether any junctions are blocking a hole from being
+        marked, plus counts of holes, loose verts/edges, and zero-area faces.
+      </p>
+    </div>
+    <div class="tool-card">
+      <span class="tool-name">Auto Repair (One-Click)</span>
+      <p>
+        Runs, in sequence: <code>Weld Entire Mesh</code> → <code>Aggressive Auto-Repair</code> →
+        <code>Analyze</code>. A single <span class="kbd">Ctrl+Z</span> undoes the whole pass. Handy as
+        a quick first attempt; the individual tools below stay available if anything remains.
+      </p>
+    </div>
+
+    <h3>General cleanup</h3>
+    <table>
+      <tr><th>Tool</th><th>What it does</th></tr>
+      <tr><td>Select Loose Islands</td><td>Selects chunks of mesh completely disconnected from everything else.</td></tr>
+      <tr><td>Select Loose Edges/Verts</td><td>Edges or vertices that don't belong to any face.</td></tr>
+      <tr><td>Select Interior Faces</td><td>Faces buried inside the volume, invisible from outside.</td></tr>
+      <tr><td>Select Downward-Facing Faces</td><td>Finds the underside of folded flaps, with an adjustable cone angle.</td></tr>
+    </table>
+    <div class="callout">
+      These tools select, they don't delete on their own. Inspect the result and delete manually
+      (<span class="kbd">X → Faces</span>) once you've confirmed it's really debris.
+    </div>
+
+    <h3>Boundary health</h3>
+    <table>
+      <tr><th>Tool</th><th>What it does</th></tr>
+      <tr><td>Repair Boundary Junctions</td><td>Local weld and cleanup around points where 3 or more open edges meet.</td></tr>
+      <tr><td>Select Boundary Junctions</td><td>Highlights exactly those problem points.</td></tr>
+      <tr><td>Aggressive Auto-Repair <span class="badge slow">higher risk</span></td><td>For scans with dozens or hundreds of junctions — a wider weld, automatic splitting at clear 4-edge crossings, and removal of short "spur" fragments.</td></tr>
+      <tr><td>Weld Entire Mesh</td><td>A global weld pass over the whole mesh — for raw scans that aren't welded anywhere (junctions scattered along the entire outline).</td></tr>
+    </table>
+    <p>
+      The <b>Largest Hole / Smallest Hole</b> dropdown next to Select Boundary Junctions controls what
+      happens when boundary tracing hits a point where two holes touch tangentially: by default it
+      picks the larger hole automatically and leaves the smaller one alone (to patch separately
+      later if you want); flip it to catch the smaller one explicitly instead.
+    </p>
+  </section>
+
+  <section id="patch-tab">
+    <h2>Patch Tab</h2>
+
+    <h4>Step 1 — Select the hole's boundary</h4>
+    <div class="tool-card">
+      <span class="tool-name">Select Full Boundary Loop</span>
+      <p>Select 1-3 open edges around the hole, click — traces the whole outline automatically.</p>
+    </div>
+    <div class="tool-card">
+      <span class="tool-name">Mark Hole Boundary</span>
+      <p>Locks in that outline as the hole to fill (stored on the mesh, persists through saving).</p>
+    </div>
+    <p><code>Weld Distance</code> controls how close two vertices need to be to count as the same
+      point during boundary detection — raw scans often have separate per-face vertices that should
+      really be one.</p>
+
+    <h4>Step 2 — Neighborhood analysis distance</h4>
+    <p>
+      How far from the edge the addon looks to learn density, curvature, and real surface shape.
+      <code>0 m</code> means only the first row of adjacent faces. A larger radius gives Shrinkwrap
+      more context, but doesn't by itself change the patch's target density — that comes from the
+      density mode chosen in step 3.
+    </p>
+
+    <h4>Step 3 — Fill</h4>
+    <p>Pick a <a href="#density-modes">density mode</a> and a <a href="#surface-fit">Surface Fit</a>, then click <code>Patch</code>.</p>
+    <p>
+      Patch runs as a background process with a progress bar (Refine → Relax → Randomize) and won't
+      freeze the interface. Press <span class="kbd">Esc</span> partway through to cancel.
+    </p>
+  </section>
+
+  <section id="remesh-tab">
+    <h2>Remesh Tab</h2>
+    <p>
+      Adjusts triangle density on any current selection, whether it's a fresh patch or existing mesh — useful for
+      evening out or adapting an existing part of the mesh.
+    </p>
+
+    <h4>Advanced: Geometry Source <span class="badge">hidden by default</span></h4>
+    <p>
+      By default, Remesh reads density and curvature from whatever mesh directly borders the
+      selection. To point it at a different area instead — one with more representative detail, for
+      example — <code>Pick Geometry Source</code> gives you an eyedropper tool in the viewport, with
+      an adjustable radius (scroll to resize live).
+    </p>
+
+    <h4>Desired result</h4>
+    <p>The same <a href="#density-modes">Density Mode</a> options, plus:</p>
+    <ul>
+      <li><code>Min Triangle Angle</code> — a safety floor for diagonal flips (18° by default); lower gives more freedom to fix high-valence points but risks thin slivers.</li>
+      <li><code>Seam</code> and <code>Material</code> — see <a href="#seam-material">Seam &amp; Material</a>.</li>
+    </ul>
+
+    <h4>Run</h4>
+    <p>
+      The default face limit is 20,000 (adjustable in <a href="#settings-popover">Settings</a>, with a
+      warning past 50,000 since processing time grows quickly beyond that).
+    </p>
+  </section>
+
+  <section id="settings-popover">
+    <h2>Settings <span style="font-weight:400; font-size:16px; color:var(--ink-soft);">(⚙ icon in the header)</span></h2>
+    <table>
+      <tr><th>Section</th><th>Contains</th></tr>
+      <tr><td>Performance</td><td>The maximum face count Remesh will process at once.</td></tr>
+      <tr><td>Quality</td><td>The angle threshold for sharp-edge protection during simplification (35° by default) — an edge bent sharper than this is never collapsed away in Uniform mode.</td></tr>
+      <tr><td>Language</td><td>A placeholder for future multi-language support (English only for now).</td></tr>
+      <tr><td>Debug</td><td>See <a href="#debug-mode">Debug Mode</a>.</td></tr>
+    </table>
+  </section>
+
+  <section id="finish-popover">
+    <h2>Finish <span style="font-weight:400; font-size:16px; color:var(--ink-soft);">(✓ icon in the header)</span></h2>
+    <p>Final checks, for the point where a repair is basically done.</p>
+    <table>
+      <tr><th>Section</th><th>Tool</th></tr>
+      <tr><td>Normals</td><td>Recalculate Normals (Outside) — fixes areas with inverted normals.</td></tr>
+      <tr><td>Cleanup</td><td>Delete Loose Geometry — deletes, on the spot, anything that doesn't belong to a face.</td></tr>
+      <tr><td>Merge</td><td>Merge By Distance, with an adjustable threshold — one last weld pass over the whole mesh.</td></tr>
+    </table>
+  </section>
+
+  <hr class="section-rule">
+
+  <section id="presets">
+    <h2>Presets</h2>
+    <p>
+      The dropdown at the top, visible from any tab. Each preset sets Weld Distance, Min Triangle
+      Angle, Density Mode, Seam, Material, Surface Fit, and Aggressive Weld Distance in one click —
+      every value can still be adjusted individually afterward.
+    </p>
+    <table>
+      <tr><th>Preset</th><th>Good for</th><th>Notes</th></tr>
+      <tr>
+        <td><b>Fast Scan Cleanup</b></td>
+        <td>Raw scans, quick pass</td>
+        <td>Looser tolerances, Curvature-Adaptive for speed.</td>
+      </tr>
+      <tr>
+        <td><b>Heritage Restoration</b></td>
+        <td>Conservation work</td>
+        <td>Edges and detail are kept tight; patches get their own material ("Patch Material") so
+          they stay identifiable — standard practice in museum conservation, where a reconstruction
+          needs to remain distinguishable from the authentic original.</td>
+      </tr>
+      <tr>
+        <td><b>Organic Mesh</b></td>
+        <td>Organic shapes, smooth transitions</td>
+        <td>Smooth seam mode, more generous relaxation.</td>
+      </tr>
+      <tr>
+        <td><b>CAD Cleanup</b></td>
+        <td>Regular/mechanical shapes</td>
+        <td>Uses <b>Uniform</b> density on purpose — perfect regularity is the actual goal here, accepting the longer processing time as a deliberate trade-off.</td>
+      </tr>
+      <tr>
+        <td><b>Custom</b></td>
+        <td>Full manual control</td>
+        <td>Leaves everything as it already is.</td>
+      </tr>
+    </table>
+  </section>
+
+  <section id="density-modes">
+    <h2>Density Modes</h2>
+    <p>Two established approaches from remeshing literature.</p>
+
+    <h3>Curvature-Adaptive <span class="badge default">default</span></h3>
+    <p>
+      Finer triangles where the real neighboring surface is more curved or detailed, coarser where
+      it's flat. The value is sampled point by point along the hole's real boundary (curvature
+      computed from the actual dihedral angle at each point) and diffused inward. Usually much
+      faster than Uniform, since it produces far fewer triangles overall.
+    </p>
+
+    <h3>Uniform (Match Neighborhood) <span class="badge slow">slower</span></h3>
+    <p>
+      One consistent triangle size across the whole patch, matching the seam — even in flat areas
+      that don't need that much density. Worth using when perfect regularity matters (mechanical
+      parts, simple geometric shapes), at the cost of producing far more triangles, which makes the
+      relax and randomize phases take proportionally longer.
+    </p>
+    <div class="callout">
+      If Patch seems to be taking a long time, check which mode is selected first. It isn't
+      necessarily a bug — Uniform is inherently more expensive on large holes by design.
+    </div>
+  </section>
+
+  <section id="surface-fit">
+    <h2>Surface Fit</h2>
+    <p>How the patch gets projected onto the real surface to pick up its curvature and detail.</p>
+
+    <h3>Project Along Normal <span class="badge default">default</span></h3>
+    <p>
+      Follows each point's normal until it finds the real surface. The search distance is bounded
+      (relative to the target triangle size), so it can't jump an unreasonable distance. Usually
+      faster than Nearest Surface and gives better results on complex terrain.
+    </p>
+
+    <h3>Nearest Surface</h3>
+    <p>
+      Searches the closest point across the entire target, with no distance cutoff — this can be
+      considerably slower on a large neighborhood. Worth trying if Project gives a worse result on
+      particularly tricky geometry, like very deep crevices or folds.
+    </p>
+  </section>
+
+  <section id="seam-material">
+    <h2>Seam &amp; Material</h2>
+    <h3>Seam</h3>
+    <ul>
+      <li><b>Crisp</b> — the seam stays exactly as generated, a precise, visible join.</li>
+      <li><b>Smooth</b> — a band of a few rings on both sides of the seam gets faired through an
+        iterative bi-Laplacian pass (this minimizes curvature variation across the band, a standard
+        substitute for true fairing when no sparse linear solver is available), so the join reads
+        as a smooth transition instead of a hard line.</li>
+    </ul>
+    <h3>Material</h3>
+    <ul>
+      <li><b>Blend In</b> — the patch takes on the majority material from its surroundings and blends into the rest of the mesh.</li>
+      <li><b>New Patch Material</b> — the patch gets its own material ("Patch Material"), visually distinct, for workflows where being able to identify exactly what was reconstructed matters.</li>
+    </ul>
+  </section>
+
+  <hr class="section-rule">
+
+  <section id="optimization-tips">
+    <h2>Workflow Tips</h2>
+    <ol>
+      <li>Run <b>Analyze</b> before anything else, so junctions get flagged before Mark Hole Boundary fails on them.</li>
+      <li>For large holes (past roughly 30,000-40,000 selected faces), box-select smaller sections and run Remesh on each one separately — the current Python, element-by-element architecture has a real speed ceiling at that scale.</li>
+      <li>Start with <b>Curvature-Adaptive</b> almost every time — it's faster and usually more faithful to the real geometry than Uniform. Save Uniform for cases where perfect regularity matters more than curvature fidelity, like mechanical parts.</li>
+      <li><b>Project Along Normal</b> is a solid default, but on very complex geometry (deep crevices) with visible folding, try Nearest Surface on that specific area.</li>
+      <li>Run <b>Weld Entire Mesh</b> once, early, when working on a raw unwelded scan — this avoids running into fresh junctions repeatedly as you move between different holes on the same object.</li>
+      <li>Treat a preset as a starting point — adjust individual parameters once the first result is visible.</li>
+      <li>Turn on <b>Debug Mode</b> before a testing session where several setting combinations are being compared — the log automatically records every setting used per run, along with processing time.</li>
+    </ol>
+  </section>
+
+  <section id="scenarios">
+    <h2>Common Scenarios</h2>
+
+    <h3>Archaeological or terrain scan, very raw</h3>
+    <p>Preset <b>Fast Scan Cleanup</b> → <code>Weld Entire Mesh</code> first (likely unwelded across the whole outline) → Analyze → repair remaining junctions individually if Aggressive Auto-Repair doesn't catch everything.</p>
+
+    <h3>Small, highly detailed object (statue, artifact)</h3>
+    <p>Preset <b>Heritage Restoration</b> → a larger neighborhood radius in Patch step 2 for richer curvature context → Crisp seam, so the repair stays identifiable.</p>
+
+    <h3>CAD mesh, mechanical parts</h3>
+    <p>Preset <b>CAD Cleanup</b> → density mode stays Uniform on purpose → a higher Min Triangle Angle to avoid irregular shapes → accept the longer processing time as the price of regularity.</p>
+
+    <h3>Organic object, complex shape (terrain with folds, creatures)</h3>
+    <p>Preset <b>Organic Mesh</b> → Smooth seam → if folding shows up on very concave areas, switch Surface Fit to Nearest Surface just there.</p>
+
+    <h3>Very large hole (tens of thousands of faces)</h3>
+    <p>Box-select smaller portions of the selection → run Remesh on each section separately → only raise the limit in Settings if you're prepared to wait (the warning appears past 50,000).</p>
+  </section>
+
+  <section id="troubleshooting">
+    <h2>Troubleshooting</h2>
+    <table>
+      <tr><th>Symptom</th><th>Likely cause</th><th>What to try</th></tr>
+      <tr>
+        <td>Mark Hole Boundary marks the wrong, small piece</td>
+        <td>The click landed on a separate fragment that happens to sit spatially close to the real hole</td>
+        <td>Check the Largest/Smallest Hole dropdown; run Analyze and Repair Boundary Junctions first</td>
+      </tr>
+      <tr>
+        <td>Patch result has long, thin, spiky triangles</td>
+        <td>Refinement stopped early (face limit reached) before finishing subdivision</td>
+        <td>Raise the limit in Settings, or split the hole into smaller sections</td>
+      </tr>
+      <tr>
+        <td>The patched surface looks folded or overlaps itself</td>
+        <td>Nearest Surface found the closest point on a different part of the surface, in a complex concave area</td>
+        <td>Switch to Project Along Normal</td>
+      </tr>
+      <tr>
+        <td>Remesh is very slow</td>
+        <td>Uniform density mode on a large selection</td>
+        <td>Try Curvature-Adaptive</td>
+      </tr>
+      <tr>
+        <td>Progress bar stuck visually after a crash or reload</td>
+        <td>The "running" state was saved into the file</td>
+        <td>The "Stuck? Click here" button in the panel resets the state without touching the mesh</td>
+      </tr>
+    </table>
+  </section>
+
+  <section id="debug-mode">
+    <h2>Debug Mode</h2>
+    <p>
+      Turned on from <a href="#settings-popover">Settings</a>. From then on, every Patch/Remesh run
+      records a log line in memory: exact timestamp, processing time, every setting used (density
+      mode, Surface Fit, distances, angles, preset), the result, and internal counters (how many
+      edge flips were accepted or rejected, how many QEM solver fallbacks happened and why).
+    </p>
+    <p>
+      The <code>Copy Log</code> button copies the whole log straight to the clipboard — useful for
+      comparing setting combinations quickly, or for reporting an issue with full context.
+    </p>
+  </section>
+
+  <hr class="section-rule">
+
+  <section id="glossary">
+    <h2>Glossary</h2>
+    <table>
+      <tr><th>Term</th><th>Meaning</th></tr>
+      <tr><td>Boundary loop</td><td>The outline (loop of open edges) that borders a hole in the mesh.</td></tr>
+      <tr><td>Junction</td><td>A point where 3 or more open edges meet — a sign of non-manifold geometry, and a blocker for normal boundary tracing.</td></tr>
+      <tr><td>Non-manifold</td><td>Geometry that doesn't describe a topologically clean surface (edges shared by more than 2 faces, junctions, and so on).</td></tr>
+      <tr><td>Shrinkwrap</td><td>Blender's native modifier, used here to project the patch onto the real surrounding surface.</td></tr>
+      <tr><td>QEM (Quadric Error Metrics)</td><td>A method (Garland &amp; Heckbert, 1997) for choosing the optimal merge position when simplifying an edge, derived from the surrounding face planes — keeps the real shape closer than a plain average would.</td></tr>
+      <tr><td>Discrete curvature</td><td>Approximated here from the dihedral angle — the angle between the normals of two adjacent faces; near 0° for flat areas, larger for curved or sharp ones.</td></tr>
+      <tr><td>Fairing / biharmonic smoothing</td><td>Smoothing that minimizes curvature variation for a genuinely smooth transition, rather than a plain positional average.</td></tr>
+      <tr><td>Zero-area face</td><td>A topologically valid triangle whose three vertices are overlapping or collinear — it occupies no real surface area and can interfere with normals, UVs, or export.</td></tr>
+      <tr><td>Weld / merge by distance</td><td>Merging vertices closer than a given distance — corrects scans where every face carries its own unwelded vertices.</td></tr>
+    </table>
+  </section>
+
+  <section id="changelog">
+    <h2>Changelog</h2>
+    <p>
+      <b>v1.0</b> — Initial release. Boundary marking and hole filling; Remesh with Curvature-Adaptive
+      and Uniform density modes; Surface Fit (Project Along Normal / Nearest Surface); Seam and
+      Material handling; junction detection and repair, including Aggressive Auto-Repair and a
+      whole-mesh weld; general cleanup tools; Presets; Analyze and Auto Repair; a Finish pass
+      (normals, loose geometry, final merge); sharp-edge protection during simplification (QEM);
+      Debug Mode; speed optimizations for large selections.
+    </p>
+  </section>
+
+</div>
+
+<footer>
+  MeshVisor Patch — internal documentation. Open this file directly in any browser, or publish it through GitHub Pages for a shareable link.
+</footer>
+
+<script>
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('#toc a');
+
+  function onScroll() {
+    let currentId = null;
+    const scrollPos = window.scrollY + 120;
+    sections.forEach(sec => {
+      if (sec.offsetTop <= scrollPos) {
+        currentId = sec.id;
+      }
+    });
+    links.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + currentId);
+    });
+  }
+
+  window.addEventListener('scroll', onScroll);
+  window.addEventListener('load', onScroll);
+</script>
+
+</body>
+</html>
