@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MeshVisor Patch — User Guide</title>
+<title>MeshVisor — User Guide</title>
 <style>
   :root {
     --bg: #f7f5f0;
@@ -259,7 +259,7 @@
 
 <div id="sidebar">
   <div class="brand">
-    <div class="name">MeshVisor Patch</div>
+    <div class="name">MeshVisor</div>
     <div class="tag">User Guide · v1.0</div>
   </div>
   <nav class="toc" id="toc">
@@ -273,6 +273,7 @@
     <a href="#prepare-tab">Prepare Tab</a>
     <a href="#patch-tab">Patch Tab</a>
     <a href="#remesh-tab">Remesh Tab</a>
+    <a href="#fabrication-tab">Fabrication Tab</a>
     <a href="#settings-popover">Settings</a>
     <a href="#finish-popover">Finish</a>
 
@@ -296,27 +297,29 @@
 
 <div id="content">
 
-  <h1>MeshVisor Patch</h1>
+  <h1>MeshVisor</h1>
   <div class="subtitle">Hole repair and mesh cleanup for 3D scans, built for Blender.</div>
 
   <section id="intro">
     <h2>What It Is</h2>
     <p>
-      MeshVisor Patch is a Blender addon built around one specific problem: 3D scans and
-      photogrammetry reconstructions almost always come with holes, non-manifold junctions, and
-      degenerate geometry — places the camera never saw, spots where reconstruction failed locally,
-      or leftover debris from processing. Fixing this by hand is slow, repetitive, and takes real
-      topology experience.
+      MeshVisor is a Blender addon for repairing scanned meshes and preparing them for physical
+      fabrication. It handles two main workflows: <b>mesh repair</b> (filling holes, fixing topology,
+      matching density and curvature) and <b>fabrication</b> (scaling, extending terrain to fill a
+      boundary volume, slicing into contour boards for 3D printing, CNC, or physical model-making).
     </p>
     <p>
-      The addon automates the whole chain: detecting a hole's boundary, filling it with triangles
-      that match the surrounding mesh's density and curvature, transferring real surface detail onto
-      the new geometry, and general mesh cleanup before and after.
+      For <b>repair</b>: the addon automates the chain from detecting a hole's boundary through filling
+      it with geometry that matches the surrounding mesh, transferring surface detail, and general cleanup.
+      For <b>fabrication</b>: scale a scan to model size, define a boundary volume, extend the terrain
+      naturally to fill it (following its own slope, not pointed at the boundary), slice into boards, and
+      export to DXF — all from one panel.
     </p>
     <div class="callout">
-      <b>In short:</b> select a hole's edge, click <code>Mark Hole Boundary</code>, click
-      <code>Patch</code>. Density, curvature, materials, and the seam are all handled automatically,
-      with fine control available anywhere you want to step in.
+      <b>Repair:</b> select a hole's edge → <code>Mark Hole Boundary</code> → <code>Patch</code>. Density,
+      curvature, and seam are handled automatically.<br>
+      <b>Fabrication:</b> <code>Scale to Model</code> → <code>Auto-fit Boundary</code> →
+      <code>Extend &amp; Close Base</code> → <code>Generate Plates</code> → <code>Export to DXF</code>.
     </div>
   </section>
 
@@ -378,7 +381,7 @@
   <section id="install">
     <h2>Installation</h2>
     <ol>
-      <li>If you have an earlier version installed: <code>Edit → Preferences → Add-ons</code>, find "MeshVisor Patch", click <b>Remove</b> — this fully clears the old folder from disk.</li>
+      <li>If you have an earlier version installed: <code>Edit → Preferences → Add-ons</code>, find "MeshVisor", click <b>Remove</b> — this fully clears the old folder from disk.</li>
       <li>Install the new <code>.zip</code>: drag-and-drop it directly into the Blender window, or use <code>Install from Disk</code> in the same menu.</li>
       <li>Enable the addon (checkbox next to its name).</li>
       <li>The panel appears in the 3D viewport sidebar (<span class="kbd">N</span>), under the <b>MeshVisor</b> tab.</li>
@@ -398,10 +401,11 @@
       <div class="step">Prepare</div><span class="arrow">→</span>
       <div class="step">Patch</div><span class="arrow">→</span>
       <div class="step">Remesh</div><span class="arrow">→</span>
+      <div class="step">Fabrication</div><span class="arrow">→</span>
       <div class="step">Finish</div>
     </div>
     <p>
-      The three main tabs (Prepare, Patch, Remesh) map to workflow stages.
+      The four main tabs (Prepare, Patch, Remesh, Fabrication) map to workflow stages.
       <b>Settings</b> and <b>Finish</b> live in small popover windows, opened from icons in the
       header, so they don't compete for space in the main tab row.
     </p>
@@ -409,10 +413,10 @@
       <li><b>Prepare</b> — check the mesh's health, repair junctions and non-manifold geometry, clean up loose parts.</li>
       <li><b>Patch</b> — mark a hole's boundary and fill it.</li>
       <li><b>Remesh</b> — adjust triangle density on any current selection, whether or not it's a fresh patch.</li>
+      <li><b>Fabrication</b> — scale, define a boundary volume, extend the terrain to fill it, slice into contour boards, export to DXF. See <a href="#fabrication-tab">Fabrication Tab</a>.</li>
       <li><b>Finish</b> — final checks: normals, remaining loose geometry, one last weld pass.</li>
     </ol>
   </section>
-
   <section id="prepare-tab">
     <h2>Prepare Tab</h2>
     <p>This is where the mesh gets ready before marking a hole, or where general cleanup happens any time.</p>
@@ -525,10 +529,79 @@
     </p>
   </section>
 
+  <section id="fabrication-tab">
+    <h2>Fabrication Tab</h2>
+    <p>
+      Prepares a scanned terrain model for physical fabrication — 3D printing, CNC milling, or contour-board models
+      (stacked horizontal slices that reproduce a terrain's shape in plywood, foam, or acrylic). The tab walks through five
+      sequential steps; each builds on the previous one's output.
+    </p>
+
+    <h4>Step 1 — Scale to Model</h4>
+    <p>
+      Creates a <b>copy</b> of the selected mesh scaled to a workable physical size (the original stays untouched).
+      Set either a <b>Scale Factor</b> (e.g. 0.02 = 2%) or a <b>Target Size</b> in millimeters. The scale is baked
+      directly into the geometry so Blender's own scale reads <code>(1, 1, 1)</code> — important for accurate Boolean
+      operations and plate dimensions later. Re-running replaces the previous copy instead of accumulating duplicates.
+    </p>
+
+    <h4>Step 2 — Boundary Solid</h4>
+    <p>
+      Define the volume that limits the final model. <b>Auto-fit</b> generates a cube or cylinder snugly around
+      the scaled mesh with a configurable margin (in mm). Or pick any existing mesh object manually with <b>Set Boundary</b>.
+      The boundary's role is purely geometric: it tells Extend where to stop and what shape the base should be.
+    </p>
+
+    <h4>Step 3 — Extend &amp; Close Base</h4>
+    <p>
+      The most complex step. The terrain surface is <b>continued outward</b> — following its own slope and curvature — until
+      it meets the boundary wall on every side, then closed at the bottom into a watertight solid ready for printing or milling.
+    </p>
+    <p>
+      A progress bar tracks each phase: <i>Analyzing surface → Building front → Extending → Matching density → Smoothing →
+      Adding surface texture → Cleaning sharp triangles → Finishing</i>. The extension algorithm (v1.0.1) uses <b>surface
+      continuation</b>: the direction comes from the terrain's own tangent field and curvature, not from rays pointing toward
+      the boundary. The boundary acts only as a stop limit ("here the surface ends"), not as a direction guide. This produces
+      a natural-looking join where the original terrain meets the extended region, with matching triangle density and surface
+      roughness.
+    </p>
+    <p class="aside">
+      <b>Trend Radius</b> controls how far from each rim point the algorithm looks to estimate the local slope. A smaller value
+      follows very local inclines; a larger value averages over a wider area. It's automatically capped to the boundary's own
+      size so it can't overshoot.
+    </p>
+
+    <h4>Step 4 — Generate Plates</h4>
+    <p>
+      Slices the solid horizontally into contour boards. Each board is a real, flat-bottomed mesh object positioned at its correct
+      stacked height — together they reproduce the terrain as a stack of physical layers.
+    </p>
+    <ul>
+      <li><b>Plate Thickness</b> — the height of each layer in mm. Smaller = finer topographic detail, more boards.</li>
+      <li><b>Thickness Multiplier</b> — scales the thickness without changing the base value (useful for quick experiments).</li>
+      <li><b>Min Plate Area</b> — filters out tiny slivers below this area threshold (in mm²). Increase cautiously: real thin
+          features of the terrain can be eliminated too.</li>
+      <li><b>Smooth Contours</b> — applies Chaikin corner-cutting to the outlines, rounding off the jagged edges of a raw scan.
+          The same smoothing applies to Preview Contours, so what you preview is what you get.</li>
+    </ul>
+    <p>
+      A progress bar tracks the slicing. <b>Preview Contours</b> draws only the cut lines (fast, no plates built) — useful for
+      checking if the thickness gives enough detail before committing to the full generation.
+    </p>
+
+    <h4>Step 5 — Export to DXF</h4>
+    <p>
+      Lays out all boards in a grid and saves a single DXF file (R12 ASCII, no external dependencies). Each board's outline and
+      label appear on the sheet. <b>Grid Spacing</b> controls how far apart outlines sit on the layout — this only affects the DXF,
+      not the real-world stacked positions.
+    </p>
+  </section>
+
   <section id="settings-popover">
     <h2>Settings <span style="font-weight:400; font-size:16px; color:var(--ink-soft);">(⚙ icon in the header)</span></h2>
     <table>
       <tr><th>Section</th><th>Contains</th></tr>
+      <tr><td>Display</td><td><b>Show Details</b> — toggles detailed specifications, measurements, and advanced cleanup/boundary-health tools under buttons. When off, the UI shows only the essential controls. <b>Mode</b> — switch between Advanced (all tools) and Quick (minimal, automated).</td></tr>
       <tr><td>Performance</td><td>The maximum face count Remesh will process at once.</td></tr>
       <tr><td>Quality</td><td>The angle threshold for sharp-edge protection during simplification (35° by default) — an edge bent sharper than this is never collapsed away in Uniform mode.</td></tr>
       <tr><td>Language</td><td>A placeholder for future multi-language support (English only for now).</td></tr>
@@ -750,6 +823,15 @@
   <section id="changelog">
     <h2>Changelog</h2>
     <p>
+      <b>v1.0.1</b> — Renamed from "MeshVisor Patch" to <b>MeshVisor</b>. New <b>Fabrication Tab</b>: Scale to Model,
+      Boundary Solid (auto-fit cube/cylinder), Extend &amp; Close Base (surface continuation algorithm — extends terrain
+      following its own slope and curvature, not toward the boundary wall), Generate Plates (contour-board slicing with
+      progress bar), Preview Contours, Export to DXF. Progress bars on Extend and Generate Plates. <b>Show Details</b>
+      toggle in Settings replaces the old Wizard/Advanced mode selector — cleaner, user-controlled. Auto Patch Small Holes
+      with progress bar. Degenerate-plate cleanup (zero-area faces, near-duplicate loop points). Surface roughness matching
+      on extended regions. Sharp-triangle cleanup. Multiple watertightness safety nets with automatic revert.
+    </p>
+    <p>
       <b>v1.0</b> — Initial release. Boundary marking and hole filling; Remesh with Curvature-Adaptive
       and Uniform density modes; Surface Fit (Project Along Normal / Nearest Surface); Seam and
       Material handling; junction detection and repair, including Aggressive Auto-Repair and a
@@ -762,7 +844,7 @@
 </div>
 
 <footer>
-  MeshVisor Patch — internal documentation. Open this file directly in any browser, or publish it through GitHub Pages for a shareable link.
+  MeshVisor — internal documentation. Open this file directly in any browser, or publish it through GitHub Pages for a shareable link.
 </footer>
 
 <script>
