@@ -311,6 +311,29 @@
   html[data-theme="dark"] #mv-ui .icon-moon { display: none; }
   #mv-ui label { position: absolute; left: -9999px; }
 /* /mv-ui:css */
+  /* panel screenshots */
+  figure.shot { margin: 18px 0; }
+  figure.shot img { width: 260px; max-width: 100%; height: auto; display: block;
+                    border-radius: 8px; border: 1px solid var(--rule); }
+  figure.shot figcaption { font-size: 13.5px; color: var(--ink-soft); margin-top: 6px;
+                           max-width: 260px; line-height: 1.45; }
+  /* a step section: the screenshot on the right, the text flowing around it */
+  section.has-shot { display: flow-root; }
+  section.has-shot > figure.shot { float: right; margin: 4px 0 18px 28px; scroll-margin-top: 24px; }
+  section.has-shot table { width: auto; min-width: 55%; }
+  section.has-shot .tool-card, section.has-shot .callout { display: flow-root; }
+  /* The Panel: one screenshot, and beside it the text that explains it */
+  .pair { display: grid; grid-template-columns: 260px minmax(0, 1fr); column-gap: 28px;
+          align-items: start; margin: 26px 0; scroll-margin-top: 24px; }
+  .pair figure.shot { margin: 0; }
+  .pair .pair-text > :first-child { margin-top: 0; }
+  .pair .pair-text > h3:not(:first-child) { margin-top: 22px; }
+  .pair:target figure.shot img, figure.shot:target img { outline: 2px solid var(--accent); outline-offset: 3px; }
+  @media (max-width: 700px) {
+    section.has-shot > figure.shot { float: none; margin: 18px 0; }
+    section.has-shot table { width: 100%; }
+    .pair { grid-template-columns: minmax(0, 1fr); row-gap: 12px; }
+  }
 </style>
 <!-- mv-ui:alt -->
 <link rel="alternate" hreflang="en" href="index.html">
@@ -333,8 +356,10 @@
     <a href="#audience">Who It's For</a>
     <a href="#install">Installation</a>
     <a href="#workflow">General Flow</a>
+    <a href="#panel">The Panel</a>
+    <a href="#steps">Step by Step</a>
 
-    <div class="group-label">The five tabs</div>
+    <div class="group-label">The five steps</div>
     <a href="#reference-tab">Reference</a>
     <a href="#align-tab">Align</a>
     <a href="#repair-tab">Repair</a>
@@ -345,9 +370,8 @@
     <a href="#optimize-tab">Optimize</a>
     <a href="#finish-tab">Finish</a>
 
-    <div class="group-label">Advanced &amp; Settings</div>
+    <div class="group-label">Expert &amp; Settings</div>
     <a href="#advanced-research">Research</a>
-    <a href="#advanced-diagnostics">Diagnostics</a>
     <a href="#settings">Settings</a>
 
     <div class="group-label">Key Concepts</div>
@@ -442,9 +466,10 @@
 
     <h3>Simple first, everything still there</h3>
     <p>
-      The five tabs show the common path. Parameters that change <i>how</i> a result is produced
-      (Settings Sweep, Poisson internals, debug tools) sit in the <b>Advanced</b> zone and in
-      <b>Show Details</b>, out of the way until you need them.
+      The panel shows the common path: one card with the next action, and five steps that hold
+      only what they need. Parameters that change <i>how</i> a result is produced (Poisson internals,
+      Settings Sweep, debug tools) appear when you switch on <b>Expert</b>, out of the way until you
+      need them.
     </p>
   </section>
 
@@ -476,7 +501,7 @@
       Tested on Blender 4.5 – 5.3. Rebuild uses Michael Kazhdan's
       <b>PoissonRecon</b> and <b>SurfaceTrimmer</b> (MIT licence). The Windows and Linux builds ship inside
       the add-on. On macOS, build them from source, then point to them in
-      <a href="#settings">Settings › Advanced › Rebuild Executables</a>. <code>Check Executables</code>
+      <a href="#settings">Preferences › Add-ons › MeshVisor › Rebuild Executables</a>. <code>Check Executables</code>
       confirms they are found.
     </p>
     <div class="callout warn">
@@ -508,18 +533,135 @@
       <li><b>Finish</b>: validate the result and fix what is left before export.</li>
     </ol>
     <p>
-      Without a reference scan, start directly at <b>Repair</b>: Diagnose, then Patch. The header
-      shows a one-line <b>next step</b> hint, and the <b>?</b> button opens this page at the section you
-      are in. The <b>⚙</b> button opens <a href="#settings">Settings</a>. The small <b>Advanced</b>
-      toggle under the tabs opens <a href="#advanced-research">Research</a> and
-      <a href="#advanced-diagnostics">Diagnostics</a>.
+      Without a reference scan, start directly at <b>Repair</b>: Diagnose, then Patch. The start
+      screen offers that path as <b>Only a Mesh to Repair</b>. <a href="#panel">The Panel</a> explains the
+      card, the steps and the <b>Expert</b> switch.
     </p>
+  </section>
+
+  <section id="panel">
+    <h2>The Panel</h2>
+    <p>The panel has three parts, top to bottom: a header, a card with the next action, and the list of steps.</p>
+    <div class="pair" id="shot-start">
+      <figure class="shot"><img src="img/panel-start.png" alt="Start screen: pick what you have."></figure>
+      <div class="pair-text">
+        <h3>Start screen</h3>
+        <p>
+          While no reference cloud is picked, the panel asks what you have. <b>Point Cloud and a Mesh</b>
+      opens Reference. <b>Only a Mesh to Repair</b> opens Repair › Diagnose. <b>A Meshroom Project</b> opens
+      Reference with the Meshroom import unfolded. The house icon in the header brings this screen back.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-card">
+      <figure class="shot"><img src="img/panel-align.png" alt="A step open: the card carries the action, the step its options."></figure>
+      <div class="pair-text">
+        <h3>The card</h3>
+        <p>
+          The card under the header says where things stand and offers the one action that comes next
+      as a large button: <code>Load Point Clouds from Folder</code>, <code>Fit to Reference</code>,
+      <code>Rebuild &amp; Repair</code>, <code>Mark Hole Boundary</code>, <code>Patch</code>, <code>Remesh</code>,
+      <code>Validate Asset</code>. When a step needs Edit Mode, the button is <code>Enter Edit Mode</code>.
+      While something runs, the card shows the progress bar, with <code>Stop</code> where the task can be
+      stopped. After a Rebuild it shows the result, with Accept and Reject.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-edit-mode">
+      <figure class="shot"><img src="img/panel-edit-mode.png" alt="A step that needs Edit Mode offers the button."></figure>
+      <div class="pair-text">
+        <h3 id="panel-edit-mode">Edit Mode</h3>
+        <p>
+          Diagnose, Patch, Optimize and Finish work on the vertices and faces of the mesh, so they need Edit Mode. When you open one of them in Object Mode, the card names the selected mesh and offers <code>Enter Edit Mode</code>. The options of the step appear once you are in. If no mesh is selected, the card asks you to select one.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-progress">
+      <figure class="shot"><img src="img/panel-running.png" alt="A task running: progress and Stop."></figure>
+      <div class="pair-text">
+        <h3 id="panel-results">Results and progress</h3>
+        <p>
+          After Fit, Rebuild, Patch and Remesh, the card shows the result in the same shape: a headline, the numbers, and how to undo. While a task runs, the same card shows its progress bar, with <code>Stop</code> where the task has one. The other tasks stop with <span class="kbd">Esc</span>.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-review">
+      <figure class="shot"><img src="img/panel-review.png" alt="After Rebuild: the result, Accept and Reject."></figure>
+      <div class="pair-text">
+        <h3 id="panel-review">Reviewing a rebuild</h3>
+        <p>
+          A Rebuild does not change your mesh straight away. The new patch is a separate object, and the card waits for your decision: <code>Accept Repair</code> welds it into the mesh, <code>Reject</code> removes it. Select the patch in the viewport for Accept to become available. <code>Remove Drips</code> and <code>Regularize Walls</code> are optional clean-ups to run before you accept.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-result">
+      <figure class="shot"><img src="img/panel-result.png" alt="After a fit: the last result, in the card."></figure>
+      <div class="pair-text">
+        <h3 id="panel-last-result">The last result</h3>
+        <p>
+          After a fit, the card keeps the last result under the buttons: the scale that was found, how far the model moved, and the residual. The residual is the distance left between the model and the cloud, also given as a percentage of the model's size. Under 1% is a good fit, and from 3% up the card marks it as doubtful. <code>Fit Again</code> repeats the fit, and <span class="kbd">F9</span> changes its settings.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-steps">
+      <figure class="shot"><img src="img/panel-expert-steps.png" alt="Expert on, all steps closed: Research joins the list."></figure>
+      <div class="pair-text">
+        <h3>Steps</h3>
+        <p>
+          Reference, Align, Repair, Optimize and Finish are a numbered list. Click a step to open it,
+      and click it again to close it. One step is open at a time, and a check mark shows the steps already
+      done. An open step holds its options; the action itself is in the card.
+        </p>
+        <h3>Simple and Expert</h3>
+        <p>
+          The <b>Expert</b> button in the header is the only complexity switch. Off, each step shows
+      what it needs. On, each step adds its finer options and measurements, the list gains a
+      <a href="#advanced-research">Research</a> step, and Settings shows the executables and the debug
+      tools. Options hidden in Simple keep their values and still apply.
+        </p>
+      </div>
+    </div>
+    <h3 id="panel-presets">Presets</h3>
+    <p>In Simple, two settings are presets, not numbers. Rebuild's <b>Detail</b> is Draft, Normal or Fine (octree depth 6, 8 or 10), and <b>Smooth Surface</b> is Light, Medium or Strong. Expert shows the numbers. A value set by hand leaves no preset highlighted.</p>
+    <h3 id="panel-f9">Adjust after running (F9)</h3>
+    <p><code>Smooth Surface</code> and <code>Fit to Reference</code> can be fine-tuned after they run: press <span class="kbd">F9</span> (Adjust Last Operation), change a value, and the operation runs again with it. The panel keeps what you set there. Stamp works the same way. Patch, Remesh and Rebuild run in the background and cannot be redone this way.</p>
+    <h3 id="panel-pie">Tools pie</h3>
+    <p><span class="kbd">Shift+Alt+V</span> in the viewport opens the tools that work under the cursor: Draw Crop Volume, Add Crop Volume, Mark Alignment Point, Mark Hole Boundary, Select Boundary Loop, Pick Stamp Source, Stamp Selected Faces and Pick Geometry Source. Tools that do not apply in the current mode are greyed out. The shortcut can be changed in Preferences › Keymap, and Settings has a button that opens the pie. While a viewport tool runs, the status bar at the bottom of the window says what to click.</p>
+    <p>The <b>?</b> button opens this page at the section you are in. The <b>⚙</b> button opens <a href="#settings">Settings</a>.</p>
+  </section>
+
+  <section id="steps">
+    <h2>Step by Step</h2>
+    <p>Two walk-throughs. The simple one needs no reference scan and stays in Simple. The advanced one uses a laser scan and the Expert options.</p>
+    <h3 id="steps-simple">Simple: repair a mesh on its own</h3>
+    <ol>
+      <li>Open the sidebar (<span class="kbd">N</span>), tab MeshVisor, and choose <b>Only a Mesh to Repair</b>.</li>
+      <li>Select the mesh and click <code>Enter Edit Mode</code> in the card.</li>
+      <li>Click <code>Analyze</code>. The list shows what was found: <code>Select</code> shows a problem in the viewport, <code>Fix</code> repairs that kind.</li>
+      <li>Click <code>Auto Repair</code> for the general problems, then <code>Auto Patch Small Holes</code> for the many tiny holes.</li>
+      <li>For a larger hole, open <b>Patch</b>: select one edge of the hole, click <code>Mark Hole Boundary</code>, then <code>Patch</code>.</li>
+      <li>If a flat area is noisy, go back to <b>Diagnose</b>, pick Light, Medium or Strong, and click <code>Smooth Surface</code>.</li>
+      <li>Open <b>Finish</b>: <code>Validate Asset</code>, fix what is left, then export with File › Export.</li>
+    </ol>
+    <h3 id="steps-advanced">Advanced: rebuild from a laser scan</h3>
+    <ol>
+      <li>Choose <b>Point Cloud and a Mesh</b>, click <code>Load Point Clouds from Folder</code> and pick the laser scan as the cloud. For a very large scan, link the <b>Full-Res</b> file and keep a thinned copy in the scene.</li>
+      <li>In <b>Crop Volumes</b>, <code>Draw</code> a <i>Keep Inside Only</i> volume over the damaged region. The tool is also in the tools pie (<span class="kbd">Shift+Alt+V</span>).</li>
+      <li>Open <b>Align</b>: place the mesh roughly by eye, select it, and click <code>Fit to Reference</code>. Read the residual in the card. If the fit hit a limit, press <span class="kbd">F9</span> and adjust it.</li>
+      <li>Open <b>Repair › Rebuild</b>: select the mesh and the crop volume, pick a Detail preset, turn on <b>Remove Vegetation</b> if plants cover the wall, then click <code>Rebuild &amp; Repair</code>.</li>
+      <li>Read the deviation in the card. Clean up with <code>Remove Drips</code> or <code>Regularize Walls</code> if needed, then <code>Accept Repair</code> or <code>Reject</code>.</li>
+      <li>For a stubborn region, switch on <b>Expert</b> and run a <code>Settings Sweep</code> in the Research step, then apply the best variant's settings to Rebuild.</li>
+      <li>Fill what the cloud does not cover with <b>Patch</b>, and remove pipes or cables from a wall with <a href="#stamp">Stamp</a>.</li>
+      <li>Select the new patch and open <b>Optimize</b>: <code>Remesh</code> evens out its triangle density.</li>
+      <li>Open <b>Finish</b>: <code>Validate Asset</code>, Normals, Merge, then export.</li>
+    </ol>
   </section>
 
   <hr class="section-rule">
 
-  <section id="reference-tab">
+  <section id="reference-tab" class="has-shot">
     <h2>Reference</h2>
+    <figure class="shot" id="shot-reference-tab"><img src="img/panel-reference.png" alt="Reference with a cloud picked: the cloud, Display and Crop Volumes."><figcaption>Reference with a cloud picked: the cloud, Display and Crop Volumes.</figcaption></figure>
     <p>
       The reference is a <b>metric point cloud</b>, usually a laser scan. It is the one thing in the scene
       that knows real metres, so it never moves: the mesh is fitted onto it (see
@@ -545,7 +687,8 @@
       </p>
     </div>
 
-    <h4>2 — Make it readable</h4>
+    <h4 id="reference-display">2 — Make it readable</h4>
+    <p>These three controls are in the <b>Display</b> box, closed by default. They change only what you see.</p>
     <table>
       <tr><th>Control</th><th>What it does</th></tr>
       <tr><td>Point Size</td><td>How big points are drawn. Only what you see changes.</td></tr>
@@ -553,25 +696,26 @@
       <tr><td>Sphere View</td><td>Draws points as small spheres, with an adjustable radius and material, as a workaround for viewport bugs where large clouds drop points.</td></tr>
     </table>
 
-    <h4>3 — Crop</h4>
+    <h4 id="reference-crop">3 — Crop</h4>
     <div class="tool-card">
-      <span class="tool-name">Subtraction Volumes</span>
+      <span class="tool-name">Crop Volumes</span>
       <p>
         Shapes that cut points out of the full-resolution source (<b>Cut Inside</b>) or keep only what is
         inside them (<b>Keep Inside Only</b>). <code>Add</code> places a box, <code>Draw</code> drags one out
-        in the viewport, and <code>Convert Selected</code> turns your own meshes into volumes.
+        in the viewport, and <code>Convert</code> turns your own meshes into volumes.
         <code>Preview Exclusion</code> shows the result before anything is final. A <i>Keep Inside Only</i>
         volume is also how you tell <a href="#repair-rebuild">Rebuild</a> which region to reconstruct.
       </p>
     </div>
     <div class="tool-card">
       <span class="tool-name">Delete Points in Selection's Bounding Box</span>
-      <p>Removes points from the real data, not just from the display. Tick the confirmation first.</p>
+      <p>Removes points from the real data, not just from the display. Shown in Edit Mode, and it asks for confirmation first.</p>
     </div>
   </section>
 
-  <section id="align-tab">
+  <section id="align-tab" class="has-shot">
     <h2>Align</h2>
+    <figure class="shot" id="shot-align-tab"><img src="img/panel-align.png" alt="Align, with the model selected."><figcaption>Align, with the model selected.</figcaption></figure>
 
     <h3>Fit a mesh to the reference</h3>
     <ol>
@@ -584,7 +728,8 @@
       careful manual placement, a fit that wants to resize by 30% has locked onto the wrong part of the
       cloud. When a limit is hit, the panel says so.
     </p>
-    <h4>Advanced</h4>
+    <p>After a fit, the card shows the last result. Press <span class="kbd">F9</span> to change the limits or the options below and fit again.</p>
+    <h4>Options <span class="badge">Expert</span></h4>
     <table>
       <tr><th>Setting</th><th>Meaning</th></tr>
       <tr><td>Rough Fit First</td><td>Drops the model onto the cloud's centre at roughly its size before the real fit.</td></tr>
@@ -606,15 +751,16 @@
   <section id="repair-tab">
     <h2>Repair</h2>
     <p>
-      One task, three ways in. The small row under the tab switches between them:
+      One task, three ways in. The row at the top of the step switches between them:
       <a href="#repair-rebuild">Rebuild</a> (from the reference cloud), <a href="#repair-diagnose">Diagnose</a>
       (general mesh problems) and <a href="#repair-patch">Patch</a> (fill a hole without reference data).
-      The panel shows what is marked and selected, and a hint for the next step.
+      The card shows what is marked or selected and the action that comes next.
     </p>
   </section>
 
-  <section id="repair-rebuild">
+  <section id="repair-rebuild" class="has-shot">
     <h2>Repair › Rebuild</h2>
+    <figure class="shot" id="shot-repair-rebuild"><img src="img/panel-rebuild.png" alt="Repair › Rebuild in Simple."><figcaption>Repair › Rebuild in Simple.</figcaption></figure>
     <p>
       Rebuilds a damaged region <b>from the measured points</b> rather than inventing geometry across the
       gap. Around a photogrammetry hole the surface often folds back under itself, so the visible rim is
@@ -628,14 +774,14 @@
 
     <h4>1 — Select the region</h4>
     <ul>
-      <li><b>Rebuild</b> (cloud only, a standalone piece): select a <i>Keep Inside Only</i> crop volume, in Object Mode.</li>
+      <li><b>Rebuild from Cloud</b> (cloud only, a standalone piece): select a <i>Keep Inside Only</i> crop volume, in Object Mode.</li>
       <li><b>Rebuild &amp; Repair</b> (mesh and cloud, continuous with the mesh): also select the mesh, or in Edit Mode the vertices around the hole.</li>
     </ul>
 
     <h4>2 — Rebuild</h4>
     <table>
       <tr><th>Setting</th><th>Meaning</th></tr>
-      <tr><td>Detail</td><td>Octree depth. Each step halves the smallest feature it can represent. The octree is adaptive and refuses to go finer where it has too few points.</td></tr>
+      <tr><td>Detail</td><td>A preset: Draft, Normal or Fine (octree depth 6, 8 or 10). Expert shows the number. Each step of depth halves the smallest feature it can represent. The octree is adaptive and refuses to go finer where it has too few points.</td></tr>
       <tr><td>Drop Folded-Under Geometry</td><td>Discards downward-facing mesh before reconstructing, so the fold under a hole's rim cannot pull the surface down.</td></tr>
       <tr><td>Mark as Reconstruction</td><td>Gives the new patch a distinct, neutral material (colour adjustable). This is the conservation convention, so the fill stays identifiable.</td></tr>
     </table>
@@ -671,8 +817,8 @@
     </p>
     <p>
       To compare several reconstructions side by side, use
-      <a href="#advanced-research">Advanced › Research</a>. The Poisson internals (stick to points, noise
-      averaging, trimming, margins, confidence weighting) are under <b>Show Details</b> and explained in
+      <a href="#advanced-research">Research</a>. The Poisson internals (stick to points, noise
+      averaging, trimming, margins, confidence weighting) are under <b>Expert</b> and explained in
       <a href="#poisson">How Rebuild Works</a>.
     </p>
 
@@ -703,12 +849,13 @@
     </ul>
   </section>
 
-  <section id="repair-diagnose">
+  <section id="repair-diagnose" class="has-shot">
     <h2>Repair › Diagnose</h2>
+    <figure class="shot" id="shot-repair-diagnose"><img src="img/panel-diagnose.png" alt="Repair › Diagnose after Analyze."><figcaption>Repair › Diagnose after Analyze.</figcaption></figure>
     <h3>Mesh health</h3>
     <div class="tool-card">
       <span class="tool-name">Analyze</span>
-      <p>Scans the mesh once, only when clicked, and summarises holes, junctions, loose geometry and zero-area faces.</p>
+      <p>Scans the mesh once, only when clicked, and lists what it found: open loops, boundary junctions, loose geometry and zero-area faces. On each row, <code>Select</code> shows the problem in the viewport and <code>Fix</code> repairs that kind and analyzes again. An open loop is not always a fault (the edge of a facade is one), so that row only has <code>Select</code>.</p>
     </div>
     <div class="tool-card">
       <span class="tool-name">Auto Repair</span>
@@ -726,6 +873,7 @@
         <b>Passes</b>, an optional painted <b>Vertex Group</b> for a feathered transition, and
         <b>Selected Only</b>.
       </p>
+      <p>In Simple the amount is a preset: Light, Medium or Strong. Fine-tune after running with <span class="kbd">F9</span>.</p>
     </div>
 
     <h3>General clean-up</h3>
@@ -749,8 +897,9 @@
     <p><b>At a Junction, Prefer</b>: Largest or Smallest Hole decides which loop is traced when two holes touch.</p>
   </section>
 
-  <section id="repair-patch">
+  <section id="repair-patch" class="has-shot">
     <h2>Repair › Patch</h2>
+    <figure class="shot" id="shot-repair-patch"><img src="img/panel-patch-expert.png" alt="Repair › Patch in Expert, with its options."><figcaption>Repair › Patch in Expert, with its options.</figcaption></figure>
     <p>Fills a hole that has no reference data, matching the triangle size, curvature and surface detail around it. Works in Edit Mode.</p>
 
     <h4>1 — Mark the hole</h4>
@@ -831,8 +980,9 @@
     </div>
   </section>
 
-  <section id="optimize-tab">
+  <section id="optimize-tab" class="has-shot">
     <h2>Optimize</h2>
+    <figure class="shot" id="shot-optimize-tab"><img src="img/panel-optimize.png" alt="Optimize, with faces selected."><figcaption>Optimize, with faces selected.</figcaption></figure>
     <p>
       Re-adjusts triangle density on the selected faces, usually a fresh patch but any part of the mesh works,
       relative to the mesh around it, then loosens the result so it does not read as a subdivided grid.
@@ -845,14 +995,14 @@
     </ul>
   </section>
 
-  <section id="finish-tab">
+  <section id="finish-tab" class="has-shot">
     <h2>Finish</h2>
+    <figure class="shot" id="shot-finish-tab"><img src="img/panel-finish.png" alt="Finish, in Edit Mode."><figcaption>Finish, in Edit Mode.</figcaption></figure>
     <p>Final checks, once the repair looks right.</p>
     <table>
       <tr><th>Tool</th><th>What it does</th></tr>
-      <tr><td>Validate Asset</td><td>Asset Health: holes, junctions, loose geometry, zero-area faces.</td></tr>
+      <tr><td>Validate Asset</td><td>Runs Analyze and shows the same list as Diagnose, with <code>Select</code> and <code>Fix</code> per problem. Loose geometry is fixed from there.</td></tr>
       <tr><td>Normals</td><td>Points every face normal outward.</td></tr>
-      <tr><td>Loose Geo</td><td>Deletes vertices and edges that belong to no face.</td></tr>
       <tr><td>Merge</td><td>One last Merge by Distance over the whole mesh (adjustable <b>Merge Distance</b>).</td></tr>
     </table>
     <p>Export with Blender's own <code>File › Export</code>. For contour boards and DXF for physical models, use ModelVisor.</p>
@@ -861,8 +1011,9 @@
   <hr class="section-rule">
 
   <section id="advanced-research">
-    <h2>Advanced › Research</h2>
+    <h2>Research <span class="badge">Expert</span></h2>
     <p>
+      A sixth step, shown while <b>Expert</b> is on.
       For comparing reconstructions instead of trusting one. <b>Settings Sweep</b> runs Poisson with 2–5
       setting combinations on the same crop volume (cloud only) and lays them out side by side. There is
       no automatic score: a number that rewards "close to the points" favours the noisiest setting, while a
@@ -877,11 +1028,11 @@
   </section>
 
   <section id="advanced-diagnostics">
-    <h2>Advanced › Diagnostics</h2>
+    <h2>Diagnostics</h2>
     <p>
-      Mesh health (<code>Analyze</code>, <code>Auto Repair</code>, <code>Delete Zero-Area Faces</code>) next to
-      <a href="#debug-mode">Debug Mode</a> and its log: the "why didn't it work" layer, kept out of the
-      normal workflow.
+      This section was removed from the panel. <code>Analyze</code>, <code>Auto Repair</code> and
+      <code>Delete Zero-Area Faces</code> are in <a href="#repair-diagnose">Repair › Diagnose</a>.
+      <a href="#debug-mode">Debug Mode</a> is in <a href="#settings">Settings</a>, with Expert on.
     </p>
   </section>
 
@@ -889,11 +1040,15 @@
     <h2>Settings <span style="font-weight:400; font-size:16px; color:var(--ink-soft);">(⚙ in the header)</span></h2>
     <table>
       <tr><th>Section</th><th>Contains</th></tr>
-      <tr><td>Performance</td><td><b>Max Faces (Remesh)</b>: the cap per Patch/Optimize run. A warning appears when it is set high.</td></tr>
-      <tr><td>Display</td><td><b>Show Details</b>: measurements and the finer settings under buttons.</td></tr>
+      <tr><td>Performance</td><td><b>Max Faces (Remesh)</b>: the cap per Patch/Optimize run. A warning appears when it is set
+        high. <b>Reset Progress (if stuck)</b> clears a progress bar left over after a crash or a reload; it
+        never touches the mesh.</td></tr>
+      <tr><td>Viewport Tools</td><td><b>Open Tools Pie</b>, and its shortcut.</td></tr>
       <tr><td>Quality</td><td><b>Sharp Edge Protection</b> (35°): edges sharper than this are never collapsed during Uniform refinement.</td></tr>
       <tr><td>Language</td><td>English.</td></tr>
-      <tr><td>Advanced</td><td><b>Rebuild Executables</b> (a folder override, plus <code>Check Executables</code>), <a href="#debug-mode">Debug Mode</a> and its log, <b>Saved Sessions</b> (logs written to disk while Debug Mode is on, so they survive a crash) and a <b>Crash Diagnostic</b> for Settings Sweep.</td></tr>
+      <tr><td>Add-on preferences</td><td><code>Executables and Debug…</code> opens them: <b>Rebuild Executables</b> (a folder override, plus <code>Check Executables</code>),
+        <a href="#debug-mode">Debug Mode</a> and its log, <b>Saved Sessions</b> (logs written to disk while
+        Debug Mode is on, so they survive a crash) and a <b>Crash Diagnostic</b> for Settings Sweep.</td></tr>
     </table>
   </section>
 
@@ -980,7 +1135,7 @@
       Reference: load the clouds, link the full-resolution PLY, thin the display. Align: move the mesh close
       by eye, then <code>Fit to Reference</code> with Recover Scale. Repair › Rebuild: draw a
       <i>Keep Inside Only</i> volume over the damage, run <code>Rebuild &amp; Repair</code>, read the
-      deviation, then Accept. For a stubborn area, run a Settings Sweep in Advanced first.
+      deviation, then Accept. For a stubborn area, run a Settings Sweep first (the Research step, in Expert).
     </p>
     <h3>Raw scan, no reference</h3>
     <p>
@@ -1013,19 +1168,19 @@
     <table>
       <tr><th>Symptom</th><th>Likely cause</th><th>What to try</th></tr>
       <tr><td>Mark Hole Boundary does not close the loop</td><td>Unwelded vertices or a junction on the rim</td><td>Raise Weld Distance; Repair Boundary Junctions; Weld Entire Mesh</td></tr>
-      <tr><td>Rebuild says executables are missing</td><td>macOS, or the bin folder was removed</td><td>Settings › Advanced › Rebuild Executables → point to PoissonRecon / SurfaceTrimmer → Check Executables</td></tr>
+      <tr><td>Rebuild says executables are missing</td><td>macOS, or the bin folder was removed</td><td>Preferences › Add-ons › MeshVisor › Rebuild Executables → point to PoissonRecon / SurfaceTrimmer → Check Executables</td></tr>
       <tr><td>Rebuilt patch balloons outward</td><td>Poisson filled an area without points</td><td>Keep Measure Trim Threshold on, or raise Trim Threshold; tighten Patch Overhang</td></tr>
       <tr><td>Fit to Reference hits a limit</td><td>The rough placement was too far off</td><td>Align better by eye, or use Rough Fit First; relax the limits only if you trust it</td></tr>
       <tr><td>Patch or Optimize is very slow</td><td>Uniform mode on a large selection</td><td>Curvature-Adaptive; split the area into sections</td></tr>
       <tr><td>Long, thin triangles in a patch</td><td>The face limit stopped refinement early</td><td>Raise Max Faces in Settings, or patch in sections</td></tr>
-      <tr><td>Progress bar stuck after a crash or reload</td><td>The "running" state was saved in the file</td><td>"Stuck? Click here" / Reset (if stuck). It never touches the mesh</td></tr>
+      <tr><td>Progress bar stuck after a crash or reload</td><td>The "running" state was saved in the file</td><td>Settings (⚙) › Reset Progress (if stuck). It never touches the mesh</td></tr>
     </table>
   </section>
 
   <section id="debug-mode">
     <h2>Debug Mode</h2>
     <p>
-      In <a href="#settings">Settings › Advanced</a>, or in Advanced › Diagnostics. While it is on, every
+      In the add-on preferences (Settings › <code>Executables and Debug…</code>). While it is on, every
       operation logs what it did, with timings and the settings used. Patch, Optimize, alignment, Rebuild and
       Sweep all report there. <code>Copy Log</code> puts it on the clipboard for a bug report. Saved
       Sessions keep the same log on disk, so it survives a crash.
@@ -1069,6 +1224,9 @@
 
   <section id="changelog">
     <h2>Changelog</h2>
+    <p>
+      <b>Next version</b>: The panel was rebuilt around the next action: a start screen, a card with the one action that comes next (progress, Stop, results, Accept and Reject), numbered steps in place of tabs, and a single <b>Expert</b> switch. Also new: presets for Detail and Smooth, adjusting Smooth and Fit after running with F9, a tools pie on Shift+Alt+V, a Diagnose list with Select and Fix, Reference split into the cloud, Display and Crop Volumes, and the executables and debug tools moved to the add-on preferences.
+    </p>
     <p>
       <b>v2.1.0</b>: Fabrication moved to its own add-on, ModelVisor. New <b>Clean Hole First</b> in Patch,
       which removes orphan edges, loose scraps, fins and self-intersecting faces before filling. Refine

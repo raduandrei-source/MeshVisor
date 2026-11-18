@@ -305,6 +305,29 @@
   html[data-theme="dark"] #mv-ui .icon-moon { display: none; }
   #mv-ui label { position: absolute; left: -9999px; }
 /* /mv-ui:css */
+  /* panel screenshots */
+  figure.shot { margin: 18px 0; }
+  figure.shot img { width: 260px; max-width: 100%; height: auto; display: block;
+                    border-radius: 8px; border: 1px solid var(--rule); }
+  figure.shot figcaption { font-size: 13.5px; color: var(--ink-soft); margin-top: 6px;
+                           max-width: 260px; line-height: 1.45; }
+  /* a step section: the screenshot on the right, the text flowing around it */
+  section.has-shot { display: flow-root; }
+  section.has-shot > figure.shot { float: right; margin: 4px 0 18px 28px; scroll-margin-top: 24px; }
+  section.has-shot table { width: auto; min-width: 55%; }
+  section.has-shot .tool-card, section.has-shot .callout { display: flow-root; }
+  /* The Panel: one screenshot, and beside it the text that explains it */
+  .pair { display: grid; grid-template-columns: 260px minmax(0, 1fr); column-gap: 28px;
+          align-items: start; margin: 26px 0; scroll-margin-top: 24px; }
+  .pair figure.shot { margin: 0; }
+  .pair .pair-text > :first-child { margin-top: 0; }
+  .pair .pair-text > h3:not(:first-child) { margin-top: 22px; }
+  .pair:target figure.shot img, figure.shot:target img { outline: 2px solid var(--accent); outline-offset: 3px; }
+  @media (max-width: 700px) {
+    section.has-shot > figure.shot { float: none; margin: 18px 0; }
+    section.has-shot table { width: 100%; }
+    .pair { grid-template-columns: minmax(0, 1fr); row-gap: 12px; }
+  }
 </style>
 <!-- mv-ui:alt -->
 <link rel="alternate" hreflang="en" href="index.html">
@@ -327,8 +350,10 @@
     <a href="#audience">Public visé</a>
     <a href="#install">Installation</a>
     <a href="#workflow">Déroulement général</a>
+    <a href="#panel">Le panneau</a>
+    <a href="#steps">Pas à pas</a>
 
-    <div class="group-label">Les cinq onglets</div>
+    <div class="group-label">Les cinq étapes</div>
     <a href="#reference-tab">Reference</a>
     <a href="#align-tab">Align</a>
     <a href="#repair-tab">Repair</a>
@@ -339,9 +364,8 @@
     <a href="#optimize-tab">Optimize</a>
     <a href="#finish-tab">Finish</a>
 
-    <div class="group-label">Advanced &amp; Settings</div>
+    <div class="group-label">Expert et Settings</div>
     <a href="#advanced-research">Research</a>
-    <a href="#advanced-diagnostics">Diagnostics</a>
     <a href="#settings">Settings</a>
 
     <div class="group-label">Notions clés</div>
@@ -437,9 +461,10 @@
 
     <h3>Simple d'abord, tout reste accessible</h3>
     <p>
-      Les cinq onglets présentent le parcours courant. Les paramètres qui changent la <i>manière</i> dont un résultat
-      est produit (Settings Sweep, paramètres internes de Poisson, outils de débogage) se trouvent dans la zone
-      <b>Advanced</b> et sous <b>Show Details</b>, à l'écart jusqu'à ce que vous en ayez besoin.
+      Le panneau montre le parcours courant : une carte avec l'action suivante, et cinq étapes qui
+      ne contiennent que le nécessaire. Les paramètres qui changent la <i>manière</i> dont un résultat est
+      produit (réglages internes de Poisson, Settings Sweep, outils de débogage) apparaissent quand vous
+      activez <b>Expert</b>, à l'écart jusqu'à ce que vous en ayez besoin.
     </p>
   </section>
 
@@ -471,7 +496,7 @@
       Testé sur Blender 4.5 – 5.3. Rebuild utilise
       <b>PoissonRecon</b> et <b>SurfaceTrimmer</b> de Michael Kazhdan (licence MIT). Les versions compilées pour Windows
       et Linux sont incluses dans l'add-on. Sous macOS, compilez-les depuis les sources, puis indiquez leur emplacement dans
-      <a href="#settings">Settings › Advanced › Rebuild Executables</a>. <code>Check Executables</code>
+      <a href="#settings">Preferences › Add-ons › MeshVisor › Rebuild Executables</a>. <code>Check Executables</code>
       confirme qu'ils sont trouvés.
     </p>
     <div class="callout warn">
@@ -503,18 +528,138 @@
       <li><b>Finish</b> : valider le résultat et corriger ce qui reste avant l'export.</li>
     </ol>
     <p>
-      Sans scan de référence, commencez directement par <b>Repair</b> : Diagnose, puis Patch. L'en-tête
-      affiche sur une ligne une indication d'<b>étape suivante</b>, et le bouton <b>?</b> ouvre cette page à la section
-      où vous vous trouvez. Le bouton <b>⚙</b> ouvre <a href="#settings">Settings</a>. Le petit interrupteur <b>Advanced</b>
-      sous les onglets ouvre <a href="#advanced-research">Research</a> et
-      <a href="#advanced-diagnostics">Diagnostics</a>.
+      Sans scan de référence, commencez directement par <b>Repair</b> : Diagnose, puis Patch.
+      L'écran de démarrage propose ce parcours sous <b>Only a Mesh to Repair</b>.
+      <a href="#panel">Le panneau</a> explique la carte, les étapes et le bouton <b>Expert</b>.
     </p>
+  </section>
+
+  <section id="panel">
+    <h2>Le panneau</h2>
+    <p>Le panneau comporte trois parties, de haut en bas : un en-tête, une carte avec l'action suivante, et la liste des étapes.</p>
+    <div class="pair" id="shot-start">
+      <figure class="shot"><img src="img/panel-start.png" alt="Écran de démarrage : choisissez ce dont vous disposez."></figure>
+      <div class="pair-text">
+        <h3>Écran de démarrage</h3>
+        <p>
+          Tant qu'aucun nuage de référence n'est choisi, le panneau demande ce dont vous disposez.
+      <b>Point Cloud and a Mesh</b> ouvre Reference. <b>Only a Mesh to Repair</b> ouvre Repair › Diagnose.
+      <b>A Meshroom Project</b> ouvre Reference avec l'import Meshroom déplié. L'icône de maison dans
+      l'en-tête ramène à cet écran.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-card">
+      <figure class="shot"><img src="img/panel-align.png" alt="Une étape ouverte : l'action est dans la carte, les options dans l'étape."></figure>
+      <div class="pair-text">
+        <h3>La carte</h3>
+        <p>
+          La carte sous l'en-tête indique où vous en êtes et propose la seule action suivante sous la
+      forme d'un grand bouton : <code>Load Point Clouds from Folder</code>, <code>Fit to Reference</code>,
+      <code>Rebuild &amp; Repair</code>, <code>Mark Hole Boundary</code>, <code>Patch</code>, <code>Remesh</code>,
+      <code>Validate Asset</code>. Quand une étape demande le mode Édition, le bouton est
+      <code>Enter Edit Mode</code>. Pendant un traitement, la carte affiche la barre de progression, avec
+      <code>Stop</code> quand le traitement peut être arrêté. Après un Rebuild, elle affiche le résultat, avec
+      Accept et Reject.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-edit-mode">
+      <figure class="shot"><img src="img/panel-edit-mode.png" alt="Une étape qui demande le mode Édition propose le bouton."></figure>
+      <div class="pair-text">
+        <h3 id="panel-edit-mode">Mode Édition</h3>
+        <p>
+          Diagnose, Patch, Optimize et Finish agissent sur les sommets et les faces du maillage, et demandent donc le mode Édition. Quand vous ouvrez l'une de ces étapes en mode Objet, la carte nomme le maillage sélectionné et propose <code>Enter Edit Mode</code>. Les options de l'étape apparaissent une fois en mode Édition. Si aucun maillage n'est sélectionné, la carte demande d'en sélectionner un.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-progress">
+      <figure class="shot"><img src="img/panel-running.png" alt="Un traitement en cours : progression et Stop."></figure>
+      <div class="pair-text">
+        <h3 id="panel-results">Résultats et progression</h3>
+        <p>
+          Après Fit, Rebuild, Patch et Remesh, la carte présente le résultat toujours de la même façon : un titre, les chiffres, et comment annuler. Pendant un traitement, la même carte affiche la barre de progression, avec <code>Stop</code> quand le traitement en dispose. Les autres s'arrêtent avec <span class="kbd">Esc</span>.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-review">
+      <figure class="shot"><img src="img/panel-review.png" alt="Après Rebuild : le résultat, Accept et Reject."></figure>
+      <div class="pair-text">
+        <h3 id="panel-review">Examiner une reconstruction</h3>
+        <p>
+          Un Rebuild ne modifie pas tout de suite votre maillage. La nouvelle pièce est un objet séparé, et la carte attend votre décision : <code>Accept Repair</code> la soude au maillage, <code>Reject</code> la supprime. Sélectionnez la pièce dans la vue pour que Accept devienne disponible. <code>Remove Drips</code> et <code>Regularize Walls</code> sont des nettoyages facultatifs à lancer avant d'accepter.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-result">
+      <figure class="shot"><img src="img/panel-result.png" alt="Après un ajustement : le dernier résultat, dans la carte."></figure>
+      <div class="pair-text">
+        <h3 id="panel-last-result">Le dernier résultat</h3>
+        <p>
+          Après un ajustement, la carte garde le dernier résultat sous les boutons : l'échelle trouvée, le déplacement du modèle et le résidu. Le résidu est la distance qui reste entre le modèle et le nuage, donnée aussi en pourcentage de la taille du modèle. En dessous de 1 %, l'ajustement est bon, et à partir de 3 % la carte le signale comme douteux. <code>Fit Again</code> relance l'ajustement, et <span class="kbd">F9</span> en change les réglages.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-steps">
+      <figure class="shot"><img src="img/panel-expert-steps.png" alt="Expert activé, étapes fermées : Research s'ajoute à la liste."></figure>
+      <div class="pair-text">
+        <h3>Étapes</h3>
+        <p>
+          Reference, Align, Repair, Optimize et Finish forment une liste numérotée. Cliquez sur une
+      étape pour l'ouvrir, et de nouveau pour la fermer. Une seule étape est ouverte à la fois, et une coche
+      indique les étapes déjà faites. Une étape ouverte contient ses options ; l'action se trouve dans la
+      carte.
+        </p>
+        <h3>Simple et Expert</h3>
+        <p>
+          Le bouton <b>Expert</b> de l'en-tête est le seul réglage de complexité. Désactivé, chaque
+      étape montre le nécessaire. Activé, chaque étape ajoute ses options fines et ses mesures, la liste
+      gagne l'étape <a href="#advanced-research">Research</a>, et Settings affiche les exécutables et les
+      outils de débogage. Les options masquées en mode Simple gardent leur valeur et restent appliquées.
+        </p>
+      </div>
+    </div>
+    <h3 id="panel-presets">Préréglages</h3>
+    <p>En mode Simple, deux réglages sont des préréglages et non des nombres. <b>Detail</b> de Rebuild vaut Draft, Normal ou Fine (profondeur d'octree 6, 8 ou 10), et <b>Smooth Surface</b> vaut Light, Medium ou Strong. Le mode Expert affiche les nombres. Avec une valeur réglée à la main, aucun préréglage n'est mis en évidence.</p>
+    <h3 id="panel-f9">Ajuster après l'exécution (F9)</h3>
+    <p><code>Smooth Surface</code> et <code>Fit to Reference</code> peuvent être affinés après leur exécution : appuyez sur <span class="kbd">F9</span> (Adjust Last Operation), changez une valeur, et l'opération est relancée avec elle. Le panneau garde ce que vous y réglez. Stamp fonctionne de la même façon. Patch, Remesh et Rebuild tournent en arrière-plan et ne peuvent pas être relancés ainsi.</p>
+    <h3 id="panel-pie">Menu circulaire des outils</h3>
+    <p><span class="kbd">Shift+Alt+V</span> dans la vue ouvre les outils qui agissent sous le curseur : Draw Crop Volume, Add Crop Volume, Mark Alignment Point, Mark Hole Boundary, Select Boundary Loop, Pick Stamp Source, Stamp Selected Faces et Pick Geometry Source. Les outils qui ne s'appliquent pas dans le mode courant sont grisés. Le raccourci se change dans Preferences › Keymap, et Settings comporte un bouton qui ouvre le menu. Pendant qu'un outil de la vue est actif, la barre d'état en bas de la fenêtre indique où cliquer.</p>
+    <p>Le bouton <b>?</b> ouvre cette page à la section où vous vous trouvez. Le bouton <b>⚙</b> ouvre <a href="#settings">Settings</a>.</p>
+  </section>
+
+  <section id="steps">
+    <h2>Pas à pas</h2>
+    <p>Deux parcours guidés. Le parcours simple ne demande pas de scan de référence et reste en mode Simple. Le parcours avancé utilise un scan laser et les options du mode Expert.</p>
+    <h3 id="steps-simple">Simple : réparer un maillage seul</h3>
+    <ol>
+      <li>Ouvrez la barre latérale (<span class="kbd">N</span>), onglet MeshVisor, et choisissez <b>Only a Mesh to Repair</b>.</li>
+      <li>Sélectionnez le maillage et cliquez sur <code>Enter Edit Mode</code> dans la carte.</li>
+      <li>Cliquez sur <code>Analyze</code>. La liste montre ce qui a été trouvé : <code>Select</code> montre un problème dans la vue, <code>Fix</code> répare ce type de problème.</li>
+      <li>Cliquez sur <code>Auto Repair</code> pour les problèmes généraux, puis sur <code>Auto Patch Small Holes</code> pour les nombreux petits trous.</li>
+      <li>Pour un trou plus grand, ouvrez <b>Patch</b> : sélectionnez une arête du trou, cliquez sur <code>Mark Hole Boundary</code>, puis sur <code>Patch</code>.</li>
+      <li>Si une zone plane est bruitée, revenez à <b>Diagnose</b>, choisissez Light, Medium ou Strong, puis cliquez sur <code>Smooth Surface</code>.</li>
+      <li>Ouvrez <b>Finish</b> : <code>Validate Asset</code>, corrigez ce qui reste, puis exportez avec File › Export.</li>
+    </ol>
+    <h3 id="steps-advanced">Avancé : reconstruire à partir d'un scan laser</h3>
+    <ol>
+      <li>Choisissez <b>Point Cloud and a Mesh</b>, cliquez sur <code>Load Point Clouds from Folder</code> et désignez le scan laser comme nuage. Pour un très grand scan, liez le fichier <b>Full-Res</b> et gardez dans la scène une copie allégée.</li>
+      <li>Dans <b>Crop Volumes</b>, tracez avec <code>Draw</code> un volume <i>Keep Inside Only</i> sur la zone abîmée. L'outil se trouve aussi dans le menu circulaire (<span class="kbd">Shift+Alt+V</span>).</li>
+      <li>Ouvrez <b>Align</b> : placez le maillage à l'œil, sélectionnez-le et cliquez sur <code>Fit to Reference</code>. Lisez le résidu dans la carte. Si l'ajustement a atteint une limite, appuyez sur <span class="kbd">F9</span> et réglez-la.</li>
+      <li>Ouvrez <b>Repair › Rebuild</b> : sélectionnez le maillage et le volume, choisissez un préréglage de Detail, activez <b>Remove Vegetation</b> si des plantes couvrent le mur, puis cliquez sur <code>Rebuild &amp; Repair</code>.</li>
+      <li>Lisez l'écart dans la carte. Nettoyez au besoin avec <code>Remove Drips</code> ou <code>Regularize Walls</code>, puis <code>Accept Repair</code> ou <code>Reject</code>.</li>
+      <li>Pour une zone récalcitrante, activez <b>Expert</b> et lancez un <code>Settings Sweep</code> dans l'étape Research, puis appliquez à Rebuild les réglages de la meilleure variante.</li>
+      <li>Comblez avec <b>Patch</b> ce que le nuage ne couvre pas, et retirez tuyaux ou câbles d'un mur avec <a href="#stamp">Stamp</a>.</li>
+      <li>Sélectionnez la nouvelle pièce et ouvrez <b>Optimize</b> : <code>Remesh</code> égalise la densité de ses triangles.</li>
+      <li>Ouvrez <b>Finish</b> : <code>Validate Asset</code>, Normals, Merge, puis exportez.</li>
+    </ol>
   </section>
 
   <hr class="section-rule">
 
-  <section id="reference-tab">
+  <section id="reference-tab" class="has-shot">
     <h2>Reference</h2>
+    <figure class="shot" id="shot-reference-tab"><img src="img/panel-reference.png" alt="Reference avec un nuage choisi : le nuage, Display et Crop Volumes."><figcaption>Reference avec un nuage choisi : le nuage, Display et Crop Volumes.</figcaption></figure>
     <p>
       La référence est un <b>nuage de points métrique</b>, en général un scan laser. C'est le seul élément de la scène
       qui connaisse les mètres réels ; il ne bouge donc jamais : c'est le maillage qui est ajusté sur lui (voir
@@ -540,7 +685,8 @@
       </p>
     </div>
 
-    <h4>2 — Le rendre lisible</h4>
+    <h4 id="reference-display">2 — Le rendre lisible</h4>
+    <p>Ces trois réglages se trouvent dans le cadre <b>Display</b>, fermé par défaut. Ils ne changent que l'affichage.</p>
     <table>
       <tr><th>Commande</th><th>Effet</th></tr>
       <tr><td>Point Size</td><td>Taille d'affichage des points. Seul l'affichage change.</td></tr>
@@ -548,25 +694,26 @@
       <tr><td>Sphere View</td><td>Affiche les points sous forme de petites sphères, avec un rayon et un matériau réglables, pour contourner les bogues de la vue 3D qui font disparaître des points dans les grands nuages.</td></tr>
     </table>
 
-    <h4>3 — Rogner</h4>
+    <h4 id="reference-crop">3 — Rogner</h4>
     <div class="tool-card">
-      <span class="tool-name">Subtraction Volumes</span>
+      <span class="tool-name">Crop Volumes</span>
       <p>
         Formes qui retirent des points de la source pleine résolution (<b>Cut Inside</b>) ou ne gardent que ce qui se
         trouve à l'intérieur (<b>Keep Inside Only</b>). <code>Add</code> place une boîte, <code>Draw</code> en trace une
-        dans la vue 3D, et <code>Convert Selected</code> transforme vos propres maillages en volumes.
+        dans la vue 3D, et <code>Convert</code> transforme vos propres maillages en volumes.
         <code>Preview Exclusion</code> montre le résultat avant que rien ne soit définitif. Un volume <i>Keep Inside Only</i>
         est aussi le moyen d'indiquer à <a href="#repair-rebuild">Rebuild</a> quelle zone reconstruire.
       </p>
     </div>
     <div class="tool-card">
       <span class="tool-name">Delete Points in Selection's Bounding Box</span>
-      <p>Supprime des points des données réelles, pas seulement de l'affichage. Cochez d'abord la confirmation.</p>
+      <p>Supprime des points des données réelles, pas seulement de l'affichage. Visible en mode Édition, et une confirmation est demandée d'abord.</p>
     </div>
   </section>
 
-  <section id="align-tab">
+  <section id="align-tab" class="has-shot">
     <h2>Align</h2>
+    <figure class="shot" id="shot-align-tab"><img src="img/panel-align.png" alt="Align, avec le modèle sélectionné."><figcaption>Align, avec le modèle sélectionné.</figcaption></figure>
 
     <h3>Ajuster un maillage sur la référence</h3>
     <ol>
@@ -579,7 +726,8 @@
       placement manuel soigneux, un ajustement qui veut redimensionner de 30 % s'est accroché à la mauvaise partie du
       nuage. Lorsqu'une limite est atteinte, le panneau le signale.
     </p>
-    <h4>Advanced</h4>
+    <p>Après un ajustement, la carte affiche le dernier résultat. Appuyez sur <span class="kbd">F9</span> pour changer les limites ou les options ci-dessous et relancer l'ajustement.</p>
+    <h4>Options <span class="badge">Expert</span></h4>
     <table>
       <tr><th>Réglage</th><th>Signification</th></tr>
       <tr><td>Rough Fit First</td><td>Place le modèle au centre du nuage, à peu près à sa taille, avant l'ajustement proprement dit.</td></tr>
@@ -601,15 +749,17 @@
   <section id="repair-tab">
     <h2>Repair</h2>
     <p>
-      Une seule tâche, trois entrées. La petite rangée sous l'onglet permet de passer de l'une à l'autre :
-      <a href="#repair-rebuild">Rebuild</a> (à partir du nuage de référence), <a href="#repair-diagnose">Diagnose</a>
-      (problèmes généraux du maillage) et <a href="#repair-patch">Patch</a> (combler un trou sans données de référence).
-      Le panneau montre ce qui est marqué et sélectionné, ainsi qu'une indication pour l'étape suivante.
+      Une seule tâche, trois entrées. La rangée en haut de l'étape permet de passer de l'une à
+      l'autre : <a href="#repair-rebuild">Rebuild</a> (à partir du nuage de référence),
+      <a href="#repair-diagnose">Diagnose</a> (problèmes généraux du maillage) et
+      <a href="#repair-patch">Patch</a> (combler un trou sans données de référence). La carte indique ce qui
+      est marqué ou sélectionné et l'action suivante.
     </p>
   </section>
 
-  <section id="repair-rebuild">
+  <section id="repair-rebuild" class="has-shot">
     <h2>Repair › Rebuild</h2>
+    <figure class="shot" id="shot-repair-rebuild"><img src="img/panel-rebuild.png" alt="Repair › Rebuild en mode Simple."><figcaption>Repair › Rebuild en mode Simple.</figcaption></figure>
     <p>
       Reconstruit une zone endommagée <b>à partir des points mesurés</b> au lieu d'inventer une géométrie par-dessus la
       lacune. Autour d'un trou de photogrammétrie, la surface se replie souvent sous elle-même : le bord visible n'est
@@ -623,14 +773,14 @@
 
     <h4>1 — Sélectionner la zone</h4>
     <ul>
-      <li><b>Rebuild</b> (nuage seul, pièce autonome) : sélectionnez un volume de découpe <i>Keep Inside Only</i>, en Object Mode.</li>
+      <li><b>Rebuild from Cloud</b> (nuage seul, pièce autonome) : sélectionnez un volume de découpe <i>Keep Inside Only</i>, en Object Mode.</li>
       <li><b>Rebuild &amp; Repair</b> (maillage et nuage, en continuité avec le maillage) : sélectionnez aussi le maillage ou, en Edit Mode, les sommets autour du trou.</li>
     </ul>
 
     <h4>2 — Rebuild</h4>
     <table>
       <tr><th>Réglage</th><th>Signification</th></tr>
-      <tr><td>Detail</td><td>Profondeur de l'octree. Chaque niveau divise par deux le plus petit détail représentable. L'octree est adaptatif et refuse de s'affiner là où il a trop peu de points.</td></tr>
+      <tr><td>Detail</td><td>Un préréglage : Draft, Normal ou Fine (profondeur d'octree 6, 8 ou 10). Le mode Expert affiche le nombre. Chaque niveau de profondeur divise par deux le plus petit détail représentable. L'octree est adaptatif et refuse d'aller plus fin là où il a trop peu de points.</td></tr>
       <tr><td>Drop Folded-Under Geometry</td><td>Écarte le maillage orienté vers le bas avant la reconstruction, pour que le repli sous le bord d'un trou ne puisse pas tirer la surface vers le bas.</td></tr>
       <tr><td>Mark as Reconstruction</td><td>Donne au nouveau patch un matériau distinct, de ton neutre (couleur réglable). C'est la convention de la conservation-restauration : le comblement reste identifiable.</td></tr>
     </table>
@@ -666,8 +816,8 @@
     </p>
     <p>
       Pour comparer plusieurs reconstructions côte à côte, utilisez
-      <a href="#advanced-research">Advanced › Research</a>. Les paramètres internes de Poisson (adhérence aux points,
-      moyennage du bruit, rognage, marges, pondération par la confiance) se trouvent sous <b>Show Details</b> et sont
+      <a href="#advanced-research">Research</a>. Les paramètres internes de Poisson (adhérence aux points,
+      moyennage du bruit, rognage, marges, pondération par la confiance) se trouvent sous <b>Expert</b> et sont
       expliqués dans <a href="#poisson">Fonctionnement de Rebuild</a>.
     </p>
 
@@ -698,12 +848,13 @@
     </ul>
   </section>
 
-  <section id="repair-diagnose">
+  <section id="repair-diagnose" class="has-shot">
     <h2>Repair › Diagnose</h2>
+    <figure class="shot" id="shot-repair-diagnose"><img src="img/panel-diagnose.png" alt="Repair › Diagnose après Analyze."><figcaption>Repair › Diagnose après Analyze.</figcaption></figure>
     <h3>Santé du maillage</h3>
     <div class="tool-card">
       <span class="tool-name">Analyze</span>
-      <p>Analyse le maillage une seule fois, uniquement au clic, et résume les trous, les jonctions, la géométrie isolée et les faces d'aire nulle.</p>
+      <p>Parcourt le maillage une fois, seulement au clic, et liste ce qu'il trouve : contours ouverts, jonctions de bord, géométrie isolée et faces d'aire nulle. Sur chaque ligne, <code>Select</code> montre le problème dans la vue et <code>Fix</code> répare ce type de problème puis relance l'analyse. Un contour ouvert n'est pas toujours un défaut (le bord d'une façade en est un), c'est pourquoi cette ligne n'a que <code>Select</code>.</p>
     </div>
     <div class="tool-card">
       <span class="tool-name">Auto Repair</span>
@@ -721,6 +872,7 @@
         <b>Passes</b>, un <b>Vertex Group</b> peint, facultatif, pour une transition progressive, et
         <b>Selected Only</b>.
       </p>
+      <p>En mode Simple, l'intensité est un préréglage : Light, Medium ou Strong. Affinez après l'exécution avec <span class="kbd">F9</span>.</p>
     </div>
 
     <h3>Nettoyage général</h3>
@@ -744,8 +896,9 @@
     <p><b>At a Junction, Prefer</b> : Largest ou Smallest Hole détermine quelle boucle est suivie lorsque deux trous se touchent.</p>
   </section>
 
-  <section id="repair-patch">
+  <section id="repair-patch" class="has-shot">
     <h2>Repair › Patch</h2>
+    <figure class="shot" id="shot-repair-patch"><img src="img/panel-patch-expert.png" alt="Repair › Patch en mode Expert, avec ses options."><figcaption>Repair › Patch en mode Expert, avec ses options.</figcaption></figure>
     <p>Comble un trou dépourvu de données de référence, en reprenant la taille des triangles, la courbure et le détail de surface environnants. Fonctionne en Edit Mode.</p>
 
     <h4>1 — Marquer le trou</h4>
@@ -827,8 +980,9 @@
     </div>
   </section>
 
-  <section id="optimize-tab">
+  <section id="optimize-tab" class="has-shot">
     <h2>Optimize</h2>
+    <figure class="shot" id="shot-optimize-tab"><img src="img/panel-optimize.png" alt="Optimize, avec des faces sélectionnées."><figcaption>Optimize, avec des faces sélectionnées.</figcaption></figure>
     <p>
       Réajuste la densité de triangles sur les faces sélectionnées (en général un patch récent, mais n'importe quelle partie
       du maillage convient) par rapport au maillage environnant, puis assouplit le résultat pour qu'il ne se lise pas comme une grille subdivisée.
@@ -841,14 +995,14 @@
     </ul>
   </section>
 
-  <section id="finish-tab">
+  <section id="finish-tab" class="has-shot">
     <h2>Finish</h2>
+    <figure class="shot" id="shot-finish-tab"><img src="img/panel-finish.png" alt="Finish, en mode Édition."><figcaption>Finish, en mode Édition.</figcaption></figure>
     <p>Vérifications finales, une fois que la réparation semble correcte.</p>
     <table>
       <tr><th>Outil</th><th>Effet</th></tr>
-      <tr><td>Validate Asset</td><td>Asset Health : trous, jonctions, géométrie isolée, faces d'aire nulle.</td></tr>
+      <tr><td>Validate Asset</td><td>Lance Analyze et affiche la même liste que Diagnose, avec <code>Select</code> et <code>Fix</code> pour chaque problème. La géométrie isolée se supprime à partir de là.</td></tr>
       <tr><td>Normals</td><td>Oriente toutes les normales de faces vers l'extérieur.</td></tr>
-      <tr><td>Loose Geo</td><td>Supprime les sommets et les arêtes qui n'appartiennent à aucune face.</td></tr>
       <tr><td>Merge</td><td>Un dernier Merge by Distance sur tout le maillage (<b>Merge Distance</b> réglable).</td></tr>
     </table>
     <p>Exportez avec la commande de Blender <code>File › Export</code>. Pour les plaques de courbes de niveau et le DXF destinés aux maquettes physiques, utilisez ModelVisor.</p>
@@ -857,8 +1011,9 @@
   <hr class="section-rule">
 
   <section id="advanced-research">
-    <h2>Advanced › Research</h2>
+    <h2>Research <span class="badge">Expert</span></h2>
     <p>
+      Une sixième étape, affichée quand <b>Expert</b> est activé.
       Pour comparer des reconstructions au lieu de se fier à une seule. <b>Settings Sweep</b> exécute Poisson avec 2 à 5
       combinaisons de réglages sur le même volume de découpe (nuage seul) et les dispose côte à côte. Il n'y a pas de
       note automatique : un chiffre qui récompense la « proximité aux points » favorise le réglage le plus bruité, alors
@@ -873,11 +1028,12 @@
   </section>
 
   <section id="advanced-diagnostics">
-    <h2>Advanced › Diagnostics</h2>
+    <h2>Diagnostics</h2>
     <p>
-      La santé du maillage (<code>Analyze</code>, <code>Auto Repair</code>, <code>Delete Zero-Area Faces</code>) à côté du
-      <a href="#debug-mode">Debug Mode</a> et de son journal : la couche « pourquoi ça n'a pas marché », tenue à l'écart du
-      flux de travail normal.
+      Cette section a été retirée du panneau. <code>Analyze</code>, <code>Auto Repair</code> et
+      <code>Delete Zero-Area Faces</code> se trouvent dans <a href="#repair-diagnose">Repair › Diagnose</a>.
+      <a href="#debug-mode">Debug Mode</a> se trouve dans <a href="#settings">Settings</a>, avec Expert
+      activé.
     </p>
   </section>
 
@@ -885,11 +1041,16 @@
     <h2>Settings <span style="font-weight:400; font-size:16px; color:var(--ink-soft);">(⚙ dans l'en-tête)</span></h2>
     <table>
       <tr><th>Section</th><th>Contenu</th></tr>
-      <tr><td>Performance</td><td><b>Max Faces (Remesh)</b> : le plafond par exécution de Patch/Optimize. Un avertissement apparaît lorsqu'il est réglé haut.</td></tr>
-      <tr><td>Display</td><td><b>Show Details</b> : les mesures et les réglages plus fins sous les boutons.</td></tr>
-      <tr><td>Quality</td><td><b>Sharp Edge Protection</b> (35°) : les arêtes plus vives que cet angle ne sont jamais réduites pendant le raffinement Uniform.</td></tr>
-      <tr><td>Language</td><td>Anglais.</td></tr>
-      <tr><td>Advanced</td><td><b>Rebuild Executables</b> (choix d'un autre dossier, plus <code>Check Executables</code>), <a href="#debug-mode">Debug Mode</a> et son journal, <b>Saved Sessions</b> (journaux écrits sur le disque tant que Debug Mode est activé, pour qu'ils survivent à un plantage) et un <b>Crash Diagnostic</b> pour Settings Sweep.</td></tr>
+      <tr><td>Performance</td><td><b>Max Faces (Remesh)</b> : le plafond par exécution de Patch/Optimize. Un avertissement
+        apparaît quand il est réglé haut. <b>Reset Progress (if stuck)</b> efface une barre de progression
+        restée après un plantage ou un rechargement ; cela ne touche jamais au maillage.</td></tr>
+      <tr><td>Viewport Tools</td><td><b>Open Tools Pie</b> et son raccourci.</td></tr>
+      <tr><td>Quality</td><td><b>Sharp Edge Protection</b> (35°) : les arêtes plus vives que cette valeur ne sont jamais fusionnées pendant le raffinement Uniform.</td></tr>
+      <tr><td>Language</td><td>English.</td></tr>
+      <tr><td>Préférences de l'add-on</td><td><code>Executables and Debug…</code> les ouvre : <b>Rebuild Executables</b> (choix d'un autre dossier, plus <code>Check Executables</code>),
+        <a href="#debug-mode">Debug Mode</a> et son journal, <b>Saved Sessions</b> (journaux écrits sur le
+        disque tant que Debug Mode est activé, pour qu'ils survivent à un plantage) et un
+        <b>Crash Diagnostic</b> pour Settings Sweep.</td></tr>
     </table>
   </section>
 
@@ -976,7 +1137,7 @@
       Reference : chargez les nuages, liez le PLY pleine résolution, allégez l'affichage. Align : approchez le maillage
       à l'œil, puis lancez <code>Fit to Reference</code> avec Recover Scale. Repair › Rebuild : tracez un volume
       <i>Keep Inside Only</i> sur la zone endommagée, lancez <code>Rebuild &amp; Repair</code>, lisez l'écart, puis
-      choisissez Accept. Pour une zone récalcitrante, lancez d'abord un Settings Sweep dans Advanced.
+      choisissez Accept. Pour une zone récalcitrante, lancez d'abord un Settings Sweep (étape Research, en mode Expert).
     </p>
     <h3>Scan brut, sans référence</h3>
     <p>
@@ -1009,19 +1170,19 @@
     <table>
       <tr><th>Symptôme</th><th>Cause probable</th><th>Que faire</th></tr>
       <tr><td>Mark Hole Boundary ne ferme pas la boucle</td><td>Sommets non soudés ou jonction sur le bord</td><td>Augmenter Weld Distance ; Repair Boundary Junctions ; Weld Entire Mesh</td></tr>
-      <tr><td>Rebuild indique que les exécutables sont absents</td><td>macOS, ou le dossier bin a été supprimé</td><td>Settings › Advanced › Rebuild Executables → indiquer PoissonRecon / SurfaceTrimmer → Check Executables</td></tr>
+      <tr><td>Rebuild indique que les exécutables sont absents</td><td>macOS, ou le dossier bin a été supprimé</td><td>Preferences › Add-ons › MeshVisor › Rebuild Executables → indiquer PoissonRecon / SurfaceTrimmer → Check Executables</td></tr>
       <tr><td>Le patch reconstruit gonfle vers l'extérieur</td><td>Poisson a comblé une zone sans points</td><td>Laisser Measure Trim Threshold activé, ou augmenter Trim Threshold ; resserrer Patch Overhang</td></tr>
       <tr><td>Fit to Reference atteint une limite</td><td>Le placement approximatif était trop éloigné</td><td>Mieux aligner à l'œil, ou utiliser Rough Fit First ; n'assouplir les limites que si vous avez confiance dans le résultat</td></tr>
       <tr><td>Patch ou Optimize est très lent</td><td>Mode Uniform sur une grande sélection</td><td>Curvature-Adaptive ; découper la zone en parties</td></tr>
       <tr><td>Triangles longs et minces dans un patch</td><td>La limite de faces a arrêté le raffinement trop tôt</td><td>Augmenter Max Faces dans Settings, ou combler par parties</td></tr>
-      <tr><td>Barre de progression bloquée après un plantage ou un rechargement</td><td>L'état « en cours » a été enregistré dans le fichier</td><td>"Stuck? Click here" / Reset (if stuck). Cela ne touche jamais au maillage</td></tr>
+      <tr><td>Barre de progression bloquée après un plantage ou un rechargement</td><td>L'état « en cours » a été enregistré dans le fichier</td><td>Settings (⚙) › Reset Progress (if stuck). Cela ne touche jamais au maillage</td></tr>
     </table>
   </section>
 
   <section id="debug-mode">
     <h2>Debug Mode</h2>
     <p>
-      Dans <a href="#settings">Settings › Advanced</a>, ou dans Advanced › Diagnostics. Tant qu'il est activé, chaque
+      Dans les préférences de l'add-on (Settings › <code>Executables and Debug…</code>). Tant qu'il est activé, chaque
       opération consigne ce qu'elle a fait, avec les durées et les réglages utilisés. Patch, Optimize, l'alignement, Rebuild et
       Sweep y rendent tous compte. <code>Copy Log</code> le copie dans le presse-papiers pour un rapport de bogue. Saved
       Sessions conserve le même journal sur le disque, afin qu'il survive à un plantage.
@@ -1065,6 +1226,9 @@
 
   <section id="changelog">
     <h2>Historique des versions</h2>
+    <p>
+      <b>Prochaine version</b> : le panneau a été reconstruit autour de l'action suivante : un écran de démarrage, une carte qui porte la seule action suivante (progression, Stop, résultats, Accept et Reject), des étapes numérotées à la place des onglets, et un seul bouton <b>Expert</b>. S'y ajoutent : des préréglages pour Detail et Smooth, l'ajustement de Smooth et de Fit après exécution avec F9, un menu circulaire des outils sur Shift+Alt+V, une liste dans Diagnose avec Select et Fix, Reference divisé en nuage, Display et Crop Volumes, et les exécutables et outils de débogage déplacés dans les préférences de l'add-on.
+    </p>
     <p>
       <b>v2.1.0</b> : la fabrication passe dans un add-on distinct, ModelVisor. Nouveau : <b>Clean Hole First</b> dans Patch,
       qui supprime les arêtes orphelines, les fragments isolés, les ailettes et les faces auto-intersectées avant le comblement.

@@ -305,6 +305,29 @@
   html[data-theme="dark"] #mv-ui .icon-moon { display: none; }
   #mv-ui label { position: absolute; left: -9999px; }
 /* /mv-ui:css */
+  /* panel screenshots */
+  figure.shot { margin: 18px 0; }
+  figure.shot img { width: 260px; max-width: 100%; height: auto; display: block;
+                    border-radius: 8px; border: 1px solid var(--rule); }
+  figure.shot figcaption { font-size: 13.5px; color: var(--ink-soft); margin-top: 6px;
+                           max-width: 260px; line-height: 1.45; }
+  /* a step section: the screenshot on the right, the text flowing around it */
+  section.has-shot { display: flow-root; }
+  section.has-shot > figure.shot { float: right; margin: 4px 0 18px 28px; scroll-margin-top: 24px; }
+  section.has-shot table { width: auto; min-width: 55%; }
+  section.has-shot .tool-card, section.has-shot .callout { display: flow-root; }
+  /* The Panel: one screenshot, and beside it the text that explains it */
+  .pair { display: grid; grid-template-columns: 260px minmax(0, 1fr); column-gap: 28px;
+          align-items: start; margin: 26px 0; scroll-margin-top: 24px; }
+  .pair figure.shot { margin: 0; }
+  .pair .pair-text > :first-child { margin-top: 0; }
+  .pair .pair-text > h3:not(:first-child) { margin-top: 22px; }
+  .pair:target figure.shot img, figure.shot:target img { outline: 2px solid var(--accent); outline-offset: 3px; }
+  @media (max-width: 700px) {
+    section.has-shot > figure.shot { float: none; margin: 18px 0; }
+    section.has-shot table { width: 100%; }
+    .pair { grid-template-columns: minmax(0, 1fr); row-gap: 12px; }
+  }
 </style>
 <!-- mv-ui:alt -->
 <link rel="alternate" hreflang="en" href="index.html">
@@ -327,8 +350,10 @@
     <a href="#audience">A chi è rivolto</a>
     <a href="#install">Installazione</a>
     <a href="#workflow">Flusso generale</a>
+    <a href="#panel">Il pannello</a>
+    <a href="#steps">Passo per passo</a>
 
-    <div class="group-label">Le cinque schede</div>
+    <div class="group-label">I cinque passi</div>
     <a href="#reference-tab">Reference</a>
     <a href="#align-tab">Align</a>
     <a href="#repair-tab">Repair</a>
@@ -339,9 +364,8 @@
     <a href="#optimize-tab">Optimize</a>
     <a href="#finish-tab">Finish</a>
 
-    <div class="group-label">Advanced &amp; Settings</div>
+    <div class="group-label">Expert e Settings</div>
     <a href="#advanced-research">Research</a>
-    <a href="#advanced-diagnostics">Diagnostics</a>
     <a href="#settings">Settings</a>
 
     <div class="group-label">Concetti chiave</div>
@@ -437,9 +461,10 @@
 
     <h3>Prima il semplice, senza togliere nulla</h3>
     <p>
-      Le cinque schede mostrano il percorso più comune. I parametri che cambiano <i>come</i> si ottiene un
-      risultato (Settings Sweep, i parametri interni di Poisson, gli strumenti di debug) stanno nella zona
-      <b>Advanced</b> e in <b>Show Details</b>, in disparte finché non ti servono.
+      Il pannello mostra il percorso comune: una scheda con l'azione successiva e cinque passi che
+      contengono solo ciò che serve. I parametri che cambiano <i>come</i> si ottiene un risultato (dettagli di
+      Poisson, Settings Sweep, strumenti di debug) compaiono quando attivi <b>Expert</b>, in disparte finché
+      non ti servono.
     </p>
   </section>
 
@@ -471,7 +496,7 @@
       Testato su Blender 4.5 – 5.3. Rebuild usa <b>PoissonRecon</b> e <b>SurfaceTrimmer</b> di Michael Kazhdan
       (licenza MIT). Le versioni compilate per Windows e Linux sono incluse nell’add-on. Su macOS, compilali dai
       sorgenti, poi indicane la posizione in
-      <a href="#settings">Settings › Advanced › Rebuild Executables</a>. <code>Check Executables</code>
+      <a href="#settings">Preferences › Add-ons › MeshVisor › Rebuild Executables</a>. <code>Check Executables</code>
       conferma che vengono trovati.
     </p>
     <div class="callout warn">
@@ -503,18 +528,137 @@
       <li><b>Finish</b>: verifica il risultato e correggi ciò che resta prima dell’esportazione.</li>
     </ol>
     <p>
-      Senza una scansione di riferimento, comincia direttamente da <b>Repair</b>: Diagnose, poi Patch.
-      L’intestazione mostra in una riga un suggerimento sul <b>passo successivo</b>, e il pulsante <b>?</b> apre
-      questa pagina alla sezione in cui ti trovi. Il pulsante <b>⚙</b> apre <a href="#settings">Settings</a>. Il
-      piccolo interruttore <b>Advanced</b> sotto le schede apre <a href="#advanced-research">Research</a> e
-      <a href="#advanced-diagnostics">Diagnostics</a>.
+      Senza una scansione di riferimento, parti direttamente da <b>Repair</b>: Diagnose, poi Patch.
+      La schermata iniziale propone questo percorso come <b>Only a Mesh to Repair</b>.
+      <a href="#panel">Il pannello</a> spiega la scheda, i passi e l'interruttore <b>Expert</b>.
     </p>
+  </section>
+
+  <section id="panel">
+    <h2>Il pannello</h2>
+    <p>Il pannello ha tre parti, dall'alto in basso: un'intestazione, una scheda con l'azione successiva e l'elenco dei passi.</p>
+    <div class="pair" id="shot-start">
+      <figure class="shot"><img src="img/panel-start.png" alt="Schermata iniziale: scegli che cosa hai."></figure>
+      <div class="pair-text">
+        <h3>Schermata iniziale</h3>
+        <p>
+          Finché non è scelta una nuvola di riferimento, il pannello chiede che cosa hai.
+      <b>Point Cloud and a Mesh</b> apre Reference. <b>Only a Mesh to Repair</b> apre Repair › Diagnose.
+      <b>A Meshroom Project</b> apre Reference con l'importazione da Meshroom aperta. L'icona della casa
+      nell'intestazione riporta a questa schermata.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-card">
+      <figure class="shot"><img src="img/panel-align.png" alt="Un passo aperto: l'azione è nella scheda, le opzioni nel passo."></figure>
+      <div class="pair-text">
+        <h3>La scheda</h3>
+        <p>
+          La scheda sotto l'intestazione dice a che punto sei e propone l'unica azione successiva come
+      pulsante grande: <code>Load Point Clouds from Folder</code>, <code>Fit to Reference</code>,
+      <code>Rebuild &amp; Repair</code>, <code>Mark Hole Boundary</code>, <code>Patch</code>, <code>Remesh</code>,
+      <code>Validate Asset</code>. Quando un passo richiede la Edit Mode, il pulsante è
+      <code>Enter Edit Mode</code>. Mentre qualcosa è in esecuzione, la scheda mostra la barra di avanzamento,
+      con <code>Stop</code> dove l'operazione si può interrompere. Dopo un Rebuild mostra il risultato, con
+      Accept e Reject.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-edit-mode">
+      <figure class="shot"><img src="img/panel-edit-mode.png" alt="Un passo che richiede la Edit Mode propone il pulsante."></figure>
+      <div class="pair-text">
+        <h3 id="panel-edit-mode">Edit Mode</h3>
+        <p>
+          Diagnose, Patch, Optimize e Finish lavorano sui vertici e sulle facce della mesh, quindi richiedono la Edit Mode. Quando apri uno di questi passi in Object Mode, la scheda indica la mesh selezionata e propone <code>Enter Edit Mode</code>. Le opzioni del passo compaiono una volta entrato. Se non è selezionata alcuna mesh, la scheda chiede di selezionarne una.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-progress">
+      <figure class="shot"><img src="img/panel-running.png" alt="Un'operazione in corso: avanzamento e Stop."></figure>
+      <div class="pair-text">
+        <h3 id="panel-results">Risultati e avanzamento</h3>
+        <p>
+          Dopo Fit, Rebuild, Patch e Remesh la scheda mostra il risultato sempre nella stessa forma: un titolo, i numeri e come annullare. Mentre un'operazione è in corso, la stessa scheda mostra la barra di avanzamento, con <code>Stop</code> dove l'operazione lo prevede. Le altre si fermano con <span class="kbd">Esc</span>.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-review">
+      <figure class="shot"><img src="img/panel-review.png" alt="Dopo Rebuild: il risultato, Accept e Reject."></figure>
+      <div class="pair-text">
+        <h3 id="panel-review">Esaminare una ricostruzione</h3>
+        <p>
+          Un Rebuild non modifica subito la mesh. La nuova toppa è un oggetto separato e la scheda attende la tua decisione: <code>Accept Repair</code> la salda nella mesh, <code>Reject</code> la elimina. Seleziona la toppa nella vista perché Accept diventi disponibile. <code>Remove Drips</code> e <code>Regularize Walls</code> sono pulizie facoltative da eseguire prima di accettare.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-result">
+      <figure class="shot"><img src="img/panel-result.png" alt="Dopo un adattamento: l'ultimo risultato, nella scheda."></figure>
+      <div class="pair-text">
+        <h3 id="panel-last-result">L'ultimo risultato</h3>
+        <p>
+          Dopo un adattamento, la scheda conserva l'ultimo risultato sotto i pulsanti: la scala trovata, di quanto si è spostato il modello e il residuo. Il residuo è la distanza rimasta tra il modello e la nuvola, indicata anche come percentuale della dimensione del modello. Sotto l'1% l'adattamento è buono, e dal 3% in su la scheda lo segnala come dubbio. <code>Fit Again</code> ripete l'adattamento, e <span class="kbd">F9</span> ne cambia le impostazioni.
+        </p>
+      </div>
+    </div>
+    <div class="pair" id="shot-steps">
+      <figure class="shot"><img src="img/panel-expert-steps.png" alt="Expert attivo, passi chiusi: Research si aggiunge all'elenco."></figure>
+      <div class="pair-text">
+        <h3>Passi</h3>
+        <p>
+          Reference, Align, Repair, Optimize e Finish sono un elenco numerato. Fai clic su un passo per
+      aprirlo e di nuovo per chiuderlo. È aperto un passo alla volta, e un segno di spunta indica i passi già
+      fatti. Un passo aperto contiene le sue opzioni; l'azione è nella scheda.
+        </p>
+        <h3>Simple ed Expert</h3>
+        <p>
+          Il pulsante <b>Expert</b> nell'intestazione è l'unico interruttore di complessità. Spento,
+      ogni passo mostra ciò che serve. Acceso, ogni passo aggiunge le opzioni più fini e le misure, l'elenco
+      guadagna il passo <a href="#advanced-research">Research</a> e Settings mostra gli eseguibili e gli
+      strumenti di debug. Le opzioni nascoste in Simple conservano i loro valori e restano attive.
+        </p>
+      </div>
+    </div>
+    <h3 id="panel-presets">Preset</h3>
+    <p>In Simple due impostazioni sono preset, non numeri. <b>Detail</b> di Rebuild è Draft, Normal o Fine (profondità dell'octree 6, 8 o 10), e <b>Smooth Surface</b> è Light, Medium o Strong. Expert mostra i numeri. Con un valore impostato a mano nessun preset risulta evidenziato.</p>
+    <h3 id="panel-f9">Regolare dopo l'esecuzione (F9)</h3>
+    <p><code>Smooth Surface</code> e <code>Fit to Reference</code> si possono rifinire dopo l'esecuzione: premi <span class="kbd">F9</span> (Adjust Last Operation), cambia un valore e l'operazione viene rieseguita con quello. Il pannello conserva ciò che imposti lì. Stamp funziona allo stesso modo. Patch, Remesh e Rebuild lavorano in background e non si possono rieseguire così.</p>
+    <h3 id="panel-pie">Menu a torta degli strumenti</h3>
+    <p><span class="kbd">Shift+Alt+V</span> nella vista apre gli strumenti che lavorano sotto il cursore: Draw Crop Volume, Add Crop Volume, Mark Alignment Point, Mark Hole Boundary, Select Boundary Loop, Pick Stamp Source, Stamp Selected Faces e Pick Geometry Source. Gli strumenti non applicabili nella modalità corrente sono in grigio. La scorciatoia si cambia in Preferences › Keymap, e Settings ha un pulsante che apre il menu. Mentre uno strumento della vista è attivo, la barra di stato in fondo alla finestra dice dove fare clic.</p>
+    <p>Il pulsante <b>?</b> apre questa pagina alla sezione in cui ti trovi. Il pulsante <b>⚙</b> apre <a href="#settings">Settings</a>.</p>
+  </section>
+
+  <section id="steps">
+    <h2>Passo per passo</h2>
+    <p>Due percorsi guidati. Quello semplice non richiede una scansione di riferimento e resta in Simple. Quello avanzato usa una scansione laser e le opzioni di Expert.</p>
+    <h3 id="steps-simple">Semplice: riparare una mesh da sola</h3>
+    <ol>
+      <li>Apri la barra laterale (<span class="kbd">N</span>), scheda MeshVisor, e scegli <b>Only a Mesh to Repair</b>.</li>
+      <li>Seleziona la mesh e fai clic su <code>Enter Edit Mode</code> nella scheda.</li>
+      <li>Fai clic su <code>Analyze</code>. L'elenco mostra ciò che è stato trovato: <code>Select</code> mostra un problema nella vista, <code>Fix</code> ripara quel tipo.</li>
+      <li>Fai clic su <code>Auto Repair</code> per i problemi generali, poi su <code>Auto Patch Small Holes</code> per i tanti piccoli fori.</li>
+      <li>Per un foro più grande, apri <b>Patch</b>: seleziona uno spigolo del foro, fai clic su <code>Mark Hole Boundary</code>, poi su <code>Patch</code>.</li>
+      <li>Se una zona piana è rumorosa, torna a <b>Diagnose</b>, scegli Light, Medium o Strong e fai clic su <code>Smooth Surface</code>.</li>
+      <li>Apri <b>Finish</b>: <code>Validate Asset</code>, sistema ciò che resta, poi esporta con File › Export.</li>
+    </ol>
+    <h3 id="steps-advanced">Avanzato: ricostruire da una scansione laser</h3>
+    <ol>
+      <li>Scegli <b>Point Cloud and a Mesh</b>, fai clic su <code>Load Point Clouds from Folder</code> e indica la scansione laser come nuvola. Per una scansione molto grande, collega il file <b>Full-Res</b> e tieni in scena una copia diradata.</li>
+      <li>In <b>Crop Volumes</b>, disegna con <code>Draw</code> un volume <i>Keep Inside Only</i> sulla zona danneggiata. Lo strumento è anche nel menu a torta (<span class="kbd">Shift+Alt+V</span>).</li>
+      <li>Apri <b>Align</b>: posiziona la mesh a occhio, selezionala e fai clic su <code>Fit to Reference</code>. Leggi il residuo nella scheda. Se l'adattamento ha raggiunto un limite, premi <span class="kbd">F9</span> e regolalo.</li>
+      <li>Apri <b>Repair › Rebuild</b>: seleziona la mesh e il volume, scegli un preset di Detail, attiva <b>Remove Vegetation</b> se la parete è coperta da piante, poi fai clic su <code>Rebuild &amp; Repair</code>.</li>
+      <li>Leggi la deviazione nella scheda. Se serve, pulisci con <code>Remove Drips</code> o <code>Regularize Walls</code>, poi <code>Accept Repair</code> oppure <code>Reject</code>.</li>
+      <li>Per una zona ostinata, attiva <b>Expert</b> ed esegui un <code>Settings Sweep</code> nel passo Research, poi applica a Rebuild le impostazioni della variante migliore.</li>
+      <li>Riempi con <b>Patch</b> ciò che la nuvola non copre, e togli tubi o cavi da una parete con <a href="#stamp">Stamp</a>.</li>
+      <li>Seleziona la nuova toppa e apri <b>Optimize</b>: <code>Remesh</code> ne uniforma la densità dei triangoli.</li>
+      <li>Apri <b>Finish</b>: <code>Validate Asset</code>, Normals, Merge, poi esporta.</li>
+    </ol>
   </section>
 
   <hr class="section-rule">
 
-  <section id="reference-tab">
+  <section id="reference-tab" class="has-shot">
     <h2>Reference</h2>
+    <figure class="shot" id="shot-reference-tab"><img src="img/panel-reference.png" alt="Reference con una nuvola scelta: la nuvola, Display e Crop Volumes."><figcaption>Reference con una nuvola scelta: la nuvola, Display e Crop Volumes.</figcaption></figure>
     <p>
       Il riferimento è una <b>nuvola di punti metrica</b>, di solito una scansione laser. È l’unico elemento
       della scena che conosce i metri reali, quindi non si sposta mai: è la mesh a essere adattata su di esso
@@ -541,7 +685,8 @@
       </p>
     </div>
 
-    <h4>2 — Rendila leggibile</h4>
+    <h4 id="reference-display">2 — Rendila leggibile</h4>
+    <p>Questi tre controlli sono nel riquadro <b>Display</b>, chiuso per impostazione predefinita. Cambiano solo ciò che vedi.</p>
     <table>
       <tr><th>Controllo</th><th>Che cosa fa</th></tr>
       <tr><td>Point Size</td><td>La dimensione con cui vengono disegnati i punti. Cambia solo ciò che vedi.</td></tr>
@@ -549,25 +694,26 @@
       <tr><td>Sphere View</td><td>Disegna i punti come piccole sfere, con raggio e materiale regolabili, per aggirare i bug della viewport per cui le nuvole grandi perdono punti.</td></tr>
     </table>
 
-    <h4>3 — Ritaglia</h4>
+    <h4 id="reference-crop">3 — Ritaglia</h4>
     <div class="tool-card">
-      <span class="tool-name">Subtraction Volumes</span>
+      <span class="tool-name">Crop Volumes</span>
       <p>
         Forme che eliminano punti dalla sorgente a piena risoluzione (<b>Cut Inside</b>) o tengono solo ciò che
         sta al loro interno (<b>Keep Inside Only</b>). <code>Add</code> inserisce un parallelepipedo, <code>Draw</code>
-        ne traccia uno trascinando nella viewport e <code>Convert Selected</code> trasforma le tue mesh in volumi.
+        ne traccia uno trascinando nella viewport e <code>Convert</code> trasforma le tue mesh in volumi.
         <code>Preview Exclusion</code> mostra il risultato prima che qualcosa diventi definitivo. Un volume
         <i>Keep Inside Only</i> è anche il modo per indicare a <a href="#repair-rebuild">Rebuild</a> quale regione ricostruire.
       </p>
     </div>
     <div class="tool-card">
       <span class="tool-name">Delete Points in Selection's Bounding Box</span>
-      <p>Rimuove i punti dai dati reali, non solo dalla visualizzazione. Spunta prima la conferma.</p>
+      <p>Rimuove punti dai dati reali, non solo dalla visualizzazione. Compare in Edit Mode e chiede prima una conferma.</p>
     </div>
   </section>
 
-  <section id="align-tab">
+  <section id="align-tab" class="has-shot">
     <h2>Align</h2>
+    <figure class="shot" id="shot-align-tab"><img src="img/panel-align.png" alt="Align, con il modello selezionato."><figcaption>Align, con il modello selezionato.</figcaption></figure>
 
     <h3>Adattare una mesh al riferimento</h3>
     <ol>
@@ -580,7 +726,8 @@
       un posizionamento manuale accurato, un adattamento che vuole cambiare la scala del 30% si è agganciato alla
       parte sbagliata della nuvola. Quando si raggiunge un limite, il pannello lo segnala.
     </p>
-    <h4>Advanced</h4>
+    <p>Dopo un adattamento, la scheda mostra l'ultimo risultato. Premi <span class="kbd">F9</span> per cambiare i limiti o le opzioni qui sotto e ripetere l'adattamento.</p>
+    <h4>Options <span class="badge">Expert</span></h4>
     <table>
       <tr><th>Impostazione</th><th>Significato</th></tr>
       <tr><td>Rough Fit First</td><td>Porta il modello sul centro della nuvola, all’incirca alla sua dimensione, prima dell’adattamento vero e proprio.</td></tr>
@@ -602,15 +749,16 @@
   <section id="repair-tab">
     <h2>Repair</h2>
     <p>
-      Un solo compito, tre modi per affrontarlo. La piccola riga sotto la scheda passa dall’uno all’altro:
+      Un solo compito, tre ingressi. La riga in cima al passo li alterna:
       <a href="#repair-rebuild">Rebuild</a> (dalla nuvola di riferimento), <a href="#repair-diagnose">Diagnose</a>
-      (problemi generali della mesh) e <a href="#repair-patch">Patch</a> (colmare un foro senza dati di riferimento).
-      Il pannello mostra ciò che è marcato e selezionato, e un suggerimento per il passo successivo.
+      (problemi generali della mesh) e <a href="#repair-patch">Patch</a> (riempire un foro senza dati di
+      riferimento). La scheda mostra ciò che è marcato o selezionato e l'azione successiva.
     </p>
   </section>
 
-  <section id="repair-rebuild">
+  <section id="repair-rebuild" class="has-shot">
     <h2>Repair › Rebuild</h2>
+    <figure class="shot" id="shot-repair-rebuild"><img src="img/panel-rebuild.png" alt="Repair › Rebuild in Simple."><figcaption>Repair › Rebuild in Simple.</figcaption></figure>
     <p>
       Ricostruisce una regione danneggiata <b>a partire dai punti misurati</b>, invece di inventare geometria
       attraverso la lacuna. Intorno a un foro fotogrammetrico la superficie spesso si ripiega sotto sé stessa,
@@ -624,14 +772,14 @@
 
     <h4>1 — Seleziona la regione</h4>
     <ul>
-      <li><b>Rebuild</b> (solo nuvola, un pezzo a sé stante): seleziona un volume di ritaglio <i>Keep Inside Only</i>, in Object Mode.</li>
+      <li><b>Rebuild from Cloud</b> (solo nuvola, un pezzo a sé stante): seleziona un volume di ritaglio <i>Keep Inside Only</i>, in Object Mode.</li>
       <li><b>Rebuild &amp; Repair</b> (mesh e nuvola, in continuità con la mesh): seleziona anche la mesh, oppure, in Edit Mode, i vertici intorno al foro.</li>
     </ul>
 
     <h4>2 — Rebuild</h4>
     <table>
       <tr><th>Impostazione</th><th>Significato</th></tr>
-      <tr><td>Detail</td><td>Profondità dell’octree. Ogni livello dimezza il dettaglio più piccolo che può rappresentare. L’octree è adattivo e non si raffina dove ha troppo pochi punti.</td></tr>
+      <tr><td>Detail</td><td>Un preset: Draft, Normal o Fine (profondità dell'octree 6, 8 o 10). Expert mostra il numero. Ogni livello di profondità dimezza il dettaglio più piccolo rappresentabile. L'octree è adattivo e non scende oltre dove ha troppo pochi punti.</td></tr>
       <tr><td>Drop Folded-Under Geometry</td><td>Scarta la mesh rivolta verso il basso prima della ricostruzione, così il lembo ripiegato sotto il bordo di un foro non può trascinare giù la superficie.</td></tr>
       <tr><td>Mark as Reconstruction</td><td>Assegna alla nuova patch un materiale distinto e neutro (colore regolabile). È la convenzione del restauro, così l’integrazione resta riconoscibile.</td></tr>
     </table>
@@ -667,8 +815,8 @@
     </p>
     <p>
       Per confrontare più ricostruzioni una accanto all’altra, usa
-      <a href="#advanced-research">Advanced › Research</a>. I parametri interni di Poisson (aderenza ai punti,
-      media del rumore, rifilatura, margini, pesatura per confidenza) si trovano in <b>Show Details</b> e sono
+      <a href="#advanced-research">Research</a>. I parametri interni di Poisson (aderenza ai punti,
+      media del rumore, rifilatura, margini, pesatura per confidenza) si trovano in <b>Expert</b> e sono
       spiegati in <a href="#poisson">Come funziona Rebuild</a>.
     </p>
 
@@ -699,12 +847,13 @@
     </ul>
   </section>
 
-  <section id="repair-diagnose">
+  <section id="repair-diagnose" class="has-shot">
     <h2>Repair › Diagnose</h2>
+    <figure class="shot" id="shot-repair-diagnose"><img src="img/panel-diagnose.png" alt="Repair › Diagnose dopo Analyze."><figcaption>Repair › Diagnose dopo Analyze.</figcaption></figure>
     <h3>Stato della mesh</h3>
     <div class="tool-card">
       <span class="tool-name">Analyze</span>
-      <p>Esamina la mesh una sola volta, solo quando fai clic, e riassume fori, giunzioni, geometria sciolta e facce di area nulla.</p>
+      <p>Esamina la mesh una volta, solo al clic, ed elenca ciò che trova: contorni aperti, giunzioni di bordo, geometria sciolta e facce ad area nulla. Su ogni riga, <code>Select</code> mostra il problema nella vista e <code>Fix</code> ripara quel tipo e rianalizza. Un contorno aperto non è sempre un difetto (il bordo di una facciata lo è), perciò quella riga ha solo <code>Select</code>.</p>
     </div>
     <div class="tool-card">
       <span class="tool-name">Auto Repair</span>
@@ -722,6 +871,7 @@
         <b>Strength</b>, <b>Passes</b>, un <b>Vertex Group</b> dipinto, facoltativo, per una transizione sfumata, e
         <b>Selected Only</b>.
       </p>
+      <p>In Simple l'intensità è un preset: Light, Medium o Strong. Rifinisci dopo l'esecuzione con <span class="kbd">F9</span>.</p>
     </div>
 
     <h3>Pulizia generale</h3>
@@ -745,8 +895,9 @@
     <p><b>At a Junction, Prefer</b>: Largest o Smallest Hole decide quale anello viene tracciato quando due fori si toccano.</p>
   </section>
 
-  <section id="repair-patch">
+  <section id="repair-patch" class="has-shot">
     <h2>Repair › Patch</h2>
+    <figure class="shot" id="shot-repair-patch"><img src="img/panel-patch-expert.png" alt="Repair › Patch in Expert, con le sue opzioni."><figcaption>Repair › Patch in Expert, con le sue opzioni.</figcaption></figure>
     <p>Colma un foro privo di dati di riferimento, riprendendo la dimensione dei triangoli, la curvatura e il dettaglio superficiale circostanti. Funziona in Edit Mode.</p>
 
     <h4>1 — Marca il foro</h4>
@@ -828,8 +979,9 @@
     </div>
   </section>
 
-  <section id="optimize-tab">
+  <section id="optimize-tab" class="has-shot">
     <h2>Optimize</h2>
+    <figure class="shot" id="shot-optimize-tab"><img src="img/panel-optimize.png" alt="Optimize, con facce selezionate."><figcaption>Optimize, con facce selezionate.</figcaption></figure>
     <p>
       Ricalibra la densità dei triangoli sulle facce selezionate (di solito una patch appena creata, ma va bene
       qualsiasi parte della mesh) in rapporto alla mesh circostante, poi allenta il risultato perché non sembri una griglia suddivisa.
@@ -842,14 +994,14 @@
     </ul>
   </section>
 
-  <section id="finish-tab">
+  <section id="finish-tab" class="has-shot">
     <h2>Finish</h2>
+    <figure class="shot" id="shot-finish-tab"><img src="img/panel-finish.png" alt="Finish, in Edit Mode."><figcaption>Finish, in Edit Mode.</figcaption></figure>
     <p>Controlli finali, quando la riparazione sembra corretta.</p>
     <table>
       <tr><th>Strumento</th><th>Che cosa fa</th></tr>
-      <tr><td>Validate Asset</td><td>Asset Health: fori, giunzioni, geometria sciolta, facce di area nulla.</td></tr>
+      <tr><td>Validate Asset</td><td>Esegue Analyze e mostra lo stesso elenco di Diagnose, con <code>Select</code> e <code>Fix</code> per ogni problema. La geometria sciolta si elimina da lì.</td></tr>
       <tr><td>Normals</td><td>Orienta verso l’esterno la normale di ogni faccia.</td></tr>
-      <tr><td>Loose Geo</td><td>Elimina vertici e spigoli che non appartengono ad alcuna faccia.</td></tr>
       <tr><td>Merge</td><td>Un ultimo Merge by Distance su tutta la mesh (<b>Merge Distance</b> regolabile).</td></tr>
     </table>
     <p>Esporta con il comando di Blender <code>File › Export</code>. Per le tavole a curve di livello e i DXF per i modelli fisici, usa ModelVisor.</p>
@@ -858,8 +1010,9 @@
   <hr class="section-rule">
 
   <section id="advanced-research">
-    <h2>Advanced › Research</h2>
+    <h2>Research <span class="badge">Expert</span></h2>
     <p>
+      Un sesto passo, visibile quando <b>Expert</b> è attivo.
       Per confrontare più ricostruzioni invece di fidarsi di una sola. <b>Settings Sweep</b> esegue Poisson con
       2–5 combinazioni di impostazioni sullo stesso volume di ritaglio (solo nuvola) e le dispone una accanto
       all’altra. Non c’è un punteggio automatico: un numero che premia la «vicinanza ai punti» favorisce
@@ -874,11 +1027,11 @@
   </section>
 
   <section id="advanced-diagnostics">
-    <h2>Advanced › Diagnostics</h2>
+    <h2>Diagnostics</h2>
     <p>
-      Lo stato della mesh (<code>Analyze</code>, <code>Auto Repair</code>, <code>Delete Zero-Area Faces</code>) accanto a
-      <a href="#debug-mode">Debug Mode</a> e al suo log: il livello del «perché non ha funzionato», tenuto fuori dal
-      flusso di lavoro normale.
+      Questa sezione è stata tolta dal pannello. <code>Analyze</code>, <code>Auto Repair</code> e
+      <code>Delete Zero-Area Faces</code> sono in <a href="#repair-diagnose">Repair › Diagnose</a>.
+      <a href="#debug-mode">Debug Mode</a> è in <a href="#settings">Settings</a>, con Expert attivo.
     </p>
   </section>
 
@@ -886,11 +1039,15 @@
     <h2>Settings <span style="font-weight:400; font-size:16px; color:var(--ink-soft);">(⚙ nell’intestazione)</span></h2>
     <table>
       <tr><th>Sezione</th><th>Contiene</th></tr>
-      <tr><td>Performance</td><td><b>Max Faces (Remesh)</b>: il tetto per ogni esecuzione di Patch/Optimize. Quando è impostato alto compare un avviso.</td></tr>
-      <tr><td>Display</td><td><b>Show Details</b>: misure e impostazioni più fini sotto i pulsanti.</td></tr>
-      <tr><td>Quality</td><td><b>Sharp Edge Protection</b> (35°): gli spigoli più vivi di questo angolo non vengono mai collassati durante il raffinamento Uniform.</td></tr>
-      <tr><td>Language</td><td>Inglese.</td></tr>
-      <tr><td>Advanced</td><td><b>Rebuild Executables</b> (una cartella alternativa, più <code>Check Executables</code>), <a href="#debug-mode">Debug Mode</a> e il suo log, <b>Saved Sessions</b> (log scritti su disco mentre Debug Mode è attiva, così sopravvivono a un crash) e un <b>Crash Diagnostic</b> per Settings Sweep.</td></tr>
+      <tr><td>Performance</td><td><b>Max Faces (Remesh)</b>: il limite per ogni esecuzione di Patch/Optimize. Compare un avviso
+        quando è impostato alto. <b>Reset Progress (if stuck)</b> azzera una barra di avanzamento rimasta dopo
+        un crash o un ricaricamento; non tocca mai la mesh.</td></tr>
+      <tr><td>Viewport Tools</td><td><b>Open Tools Pie</b> e la sua scorciatoia.</td></tr>
+      <tr><td>Quality</td><td><b>Sharp Edge Protection</b> (35°): gli spigoli più vivi di questo valore non vengono mai collassati durante il raffinamento Uniform.</td></tr>
+      <tr><td>Language</td><td>English.</td></tr>
+      <tr><td>Preferenze dell'add-on</td><td><code>Executables and Debug…</code> le apre: <b>Rebuild Executables</b> (una cartella alternativa, più <code>Check Executables</code>),
+        <a href="#debug-mode">Debug Mode</a> e il suo log, <b>Saved Sessions</b> (log scritti su disco mentre
+        Debug Mode è attiva, così sopravvivono a un crash) e un <b>Crash Diagnostic</b> per Settings Sweep.</td></tr>
     </table>
   </section>
 
@@ -977,7 +1134,7 @@
       Reference: carica le nuvole, collega il PLY a piena risoluzione, sfoltisci la visualizzazione. Align:
       avvicina la mesh a occhio, poi <code>Fit to Reference</code> con Recover Scale. Repair › Rebuild: traccia un
       volume <i>Keep Inside Only</i> sopra il danno, esegui <code>Rebuild &amp; Repair</code>, leggi la
-      deviazione, poi Accept. Per una zona ostinata, esegui prima un Settings Sweep in Advanced.
+      deviazione, poi Accept. Per una zona ostinata, esegui prima un Settings Sweep (passo Research, in Expert).
     </p>
     <h3>Scansione grezza, senza riferimento</h3>
     <p>
@@ -1010,19 +1167,19 @@
     <table>
       <tr><th>Sintomo</th><th>Causa probabile</th><th>Cosa provare</th></tr>
       <tr><td>Mark Hole Boundary non chiude l’anello</td><td>Vertici non saldati o una giunzione sul bordo</td><td>Aumenta Weld Distance; Repair Boundary Junctions; Weld Entire Mesh</td></tr>
-      <tr><td>Rebuild segnala che mancano gli eseguibili</td><td>macOS, oppure la cartella bin è stata rimossa</td><td>Settings › Advanced › Rebuild Executables → indica PoissonRecon / SurfaceTrimmer → Check Executables</td></tr>
+      <tr><td>Rebuild segnala che mancano gli eseguibili</td><td>macOS, oppure la cartella bin è stata rimossa</td><td>Preferences › Add-ons › MeshVisor › Rebuild Executables → indica PoissonRecon / SurfaceTrimmer → Check Executables</td></tr>
       <tr><td>La patch ricostruita si gonfia verso l’esterno</td><td>Poisson ha riempito una zona senza punti</td><td>Lascia attivo Measure Trim Threshold, o aumenta Trim Threshold; riduci Patch Overhang</td></tr>
       <tr><td>Fit to Reference raggiunge un limite</td><td>Il posizionamento approssimativo era troppo lontano</td><td>Allinea meglio a occhio, o usa Rough Fit First; allenta i limiti solo se ti fidi del risultato</td></tr>
       <tr><td>Patch o Optimize è molto lento</td><td>Modalità Uniform su una selezione grande</td><td>Curvature-Adaptive; dividi l’area in sezioni</td></tr>
       <tr><td>Triangoli lunghi e sottili in una patch</td><td>Il limite di facce ha interrotto presto il raffinamento</td><td>Aumenta Max Faces in Settings, oppure colma il foro per sezioni</td></tr>
-      <tr><td>Barra di avanzamento bloccata dopo un crash o un ricaricamento</td><td>Lo stato «in esecuzione» è stato salvato nel file</td><td>«Stuck? Click here» / Reset (if stuck). Non tocca mai la mesh</td></tr>
+      <tr><td>Barra di avanzamento bloccata dopo un crash o un ricaricamento</td><td>Lo stato «in esecuzione» è stato salvato nel file</td><td>Settings (⚙) › Reset Progress (if stuck). Non tocca mai la mesh</td></tr>
     </table>
   </section>
 
   <section id="debug-mode">
     <h2>Debug Mode</h2>
     <p>
-      In <a href="#settings">Settings › Advanced</a>, oppure in Advanced › Diagnostics. Quando è attiva, ogni
+      Nelle preferenze dell'add-on (Settings › <code>Executables and Debug…</code>). Quando è attiva, ogni
       operazione registra ciò che ha fatto, con i tempi e le impostazioni usate. Patch, Optimize, l’allineamento,
       Rebuild e Sweep vi riportano tutti. <code>Copy Log</code> copia il log negli appunti per una segnalazione di
       bug. Saved Sessions conserva lo stesso log su disco, così sopravvive a un crash.
@@ -1066,6 +1223,9 @@
 
   <section id="changelog">
     <h2>Cronologia delle versioni</h2>
+    <p>
+      <b>Prossima versione</b>: il pannello è stato ricostruito attorno all'azione successiva: una schermata iniziale, una scheda con l'unica azione successiva (avanzamento, Stop, risultati, Accept e Reject), passi numerati al posto delle schede e un solo interruttore <b>Expert</b>. Inoltre: preset per Detail e Smooth, regolazione di Smooth e Fit dopo l'esecuzione con F9, un menu a torta degli strumenti su Shift+Alt+V, un elenco in Diagnose con Select e Fix, Reference diviso in nuvola, Display e Crop Volumes, ed eseguibili e strumenti di debug spostati nelle preferenze dell'add-on.
+    </p>
     <p>
       <b>v2.1.0</b>: la parte Fabrication è stata spostata in un add-on a sé, ModelVisor. Nuovo <b>Clean Hole First</b>
       in Patch, che rimuove spigoli orfani, frammenti sciolti, alette e facce autointersecanti prima del riempimento.
