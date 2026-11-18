@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<!-- mv-ui:head -->
+<script>
+// theme before paint: the saved choice, otherwise dark (the guides' default)
+(function () { var t = null; try { t = localStorage.getItem("mv-theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") t = "dark"; document.documentElement.setAttribute("data-theme", t); })();
+</script>
+<!-- /mv-ui:head -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeshVisor — Guía del usuario</title>
+<meta name="description" content="Guía del usuario de MeshVisor: reparación de mallas escaneadas en Blender a partir de nubes de puntos de referencia, Rebuild, Patch, Optimize.">
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --panel: #1c211f;
+    --panel-text: #cfd6d2;
+    --panel-text-dim: #7d8985;
+    --accent: #3f6b5e;
+    --accent-bright: #4f8a78;
+    --ink: #20241f;
+    --ink-soft: #4a4f4a;
+    --rule: #dcd7ca;
+    --code-bg: #ece7d9;
+    --warn: #9c5a2e;
+    --sidebar-w: 300px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.65;
+  }
+
+  /* ---------------- Sidebar ---------------- */
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--panel);
+    color: var(--panel-text);
+    overflow-y: auto;
+    padding: 28px 0 40px 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  #sidebar::-webkit-scrollbar { width: 8px; }
+  #sidebar::-webkit-scrollbar-thumb { background: #333a37; border-radius: 4px; }
+
+  .brand {
+    padding: 0 24px 20px 24px;
+    border-bottom: 1px solid #33403a;
+    margin-bottom: 14px;
+  }
+  .brand .name {
+    font-family: "Iowan Old Style", Georgia, serif;
+    font-size: 21px;
+    color: #eef2ef;
+    letter-spacing: 0.3px;
+  }
+  .brand .tag {
+    font-size: 12px;
+    color: var(--panel-text-dim);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+
+  nav.toc { padding: 0 12px; }
+  nav.toc .group-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.3px;
+    color: var(--panel-text-dim);
+    padding: 16px 12px 6px 12px;
+  }
+  nav.toc a {
+    display: block;
+    padding: 7px 12px;
+    color: var(--panel-text);
+    text-decoration: none;
+    font-size: 14px;
+    border-left: 2px solid transparent;
+    border-radius: 0 4px 4px 0;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  nav.toc a:hover {
+    background: #262e2a;
+    color: #fff;
+  }
+  nav.toc a.active {
+    background: #24352e;
+    color: #bfe8d8;
+    border-left-color: var(--accent-bright);
+    font-weight: 600;
+  }
+
+  /* ---------------- Main content ---------------- */
+  #content {
+    margin-left: var(--sidebar-w);
+    max-width: 860px;
+    padding: 60px 56px 120px 56px;
+  }
+
+  h1 {
+    font-size: 40px;
+    margin: 0 0 6px 0;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+  }
+  .subtitle {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink-soft);
+    font-size: 16px;
+    margin-bottom: 50px;
+  }
+
+  section { margin-bottom: 64px; scroll-margin-top: 24px; }
+  section h2 {
+    font-size: 27px;
+    margin: 0 0 18px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--rule);
+    color: var(--ink);
+  }
+  section h3 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 18px;
+    color: var(--accent);
+    margin: 28px 0 8px 0;
+    letter-spacing: 0.1px;
+  }
+  section h4 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--ink-soft);
+    margin: 22px 0 6px 0;
+  }
+
+  p { margin: 10px 0; }
+  ul, ol { margin: 8px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  code, .kbd {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    color: #3a3f2e;
+  }
+
+  .callout {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14.5px;
+    background: #eef4f0;
+    border-left: 3px solid var(--accent);
+    padding: 12px 18px;
+    border-radius: 0 6px 6px 0;
+    margin: 16px 0;
+  }
+  .callout.warn {
+    background: #f7ede3;
+    border-left-color: var(--warn);
+  }
+  .callout b { color: var(--ink); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14.5px;
+    margin: 14px 0;
+  }
+  th, td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  th {
+    color: var(--ink-soft);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11.5px;
+    letter-spacing: 0.6px;
+  }
+
+  .tool-card {
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    background: #fffdf8;
+  }
+  .tool-card .tool-name {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .tool-card p { font-size: 14.5px; margin: 6px 0 0 0; }
+
+  .flow {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin: 18px 0;
+  }
+  .flow .step {
+    background: var(--accent);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .flow .arrow { color: var(--ink-soft); font-size: 18px; }
+
+  hr.section-rule {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 40px 0;
+  }
+
+  .badge {
+    display: inline-block;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 9px;
+    border-radius: 10px;
+    margin-left: 6px;
+  }
+  .badge.default { background: #dcefe5; color: var(--accent); }
+  .badge.slow { background: #f7ede3; color: var(--warn); }
+
+  footer {
+    margin-left: var(--sidebar-w);
+    padding: 30px 56px 60px 56px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
+    color: var(--panel-text-dim);
+    border-top: 1px solid var(--rule);
+  }
+
+  @media (max-width: 900px) {
+    #sidebar { display: none; }
+    #content, footer { margin-left: 0; padding: 30px 24px 100px 24px; }
+  }
+/* mv-ui:css */
+  html[data-theme="dark"] {
+    --bg: #131715;
+    --panel: #0c0f0e;
+    --panel-text: #c4ccc8;
+    --panel-text-dim: #7a8681;
+    --accent: #79b8a2;
+    --accent-bright: #8fcab4;
+    --ink: #dde3df;
+    --ink-soft: #a3ada8;
+    --rule: #2c3531;
+    --code-bg: #222a26;
+    --warn: #e0a070;
+    color-scheme: dark;
+  }
+  html[data-theme="dark"] code, html[data-theme="dark"] .kbd { color: #d6dccf; }
+  html[data-theme="dark"] .callout { background: #1b2622; }
+  html[data-theme="dark"] .callout.warn { background: #2a2019; }
+  html[data-theme="dark"] .tool-card { background: #181e1b; }
+  html[data-theme="dark"] .badge.default { background: #1f3a30; }
+  html[data-theme="dark"] .badge.slow { background: #3a2a1d; }
+  html[data-theme="dark"] .flow .step { background: #2e5a4c; }
+  html[data-theme="dark"] #sidebar { border-right: 1px solid #222a26; }
+  html[data-theme="dark"] a { color: var(--accent-bright); }
+  html[data-theme="dark"] #sidebar a { color: var(--panel-text); }
+
+  #mv-ui {
+    position: fixed; top: 12px; right: 16px; z-index: 50;
+    display: flex; gap: 8px; align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 13px;
+  }
+  #mv-ui select, #mv-ui button {
+    background: var(--bg); color: var(--ink); border: 1px solid var(--rule); border-radius: 6px;
+    height: 32px; font: inherit; cursor: pointer;
+  }
+  #mv-ui select { padding: 0 8px; }
+  #mv-ui button { width: 34px; display: flex; align-items: center; justify-content: center; padding: 0; }
+  #mv-ui button svg { width: 17px; height: 17px; }
+  #mv-ui .icon-sun { display: none; }
+  html[data-theme="dark"] #mv-ui .icon-sun { display: block; }
+  html[data-theme="dark"] #mv-ui .icon-moon { display: none; }
+  #mv-ui label { position: absolute; left: -9999px; }
+/* /mv-ui:css */
+</style>
+<!-- mv-ui:alt -->
+<link rel="alternate" hreflang="en" href="index.html">
+<link rel="alternate" hreflang="it" href="it.html">
+<link rel="alternate" hreflang="fr" href="fr.html">
+<link rel="alternate" hreflang="es" href="es.html">
+<link rel="alternate" hreflang="de" href="de.html">
+<!-- /mv-ui:alt -->
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="brand">
+    <div class="name">MeshVisor</div>
+    <div class="tag">Guía del usuario · v2.1</div>
+  </div>
+  <nav class="toc" id="toc">
+    <a href="#intro">Qué es</a>
+    <a href="#philosophy">Filosofía</a>
+    <a href="#audience">A quién va dirigido</a>
+    <a href="#install">Instalación</a>
+    <a href="#workflow">Flujo general</a>
+
+    <div class="group-label">Las cinco pestañas</div>
+    <a href="#reference-tab">Reference</a>
+    <a href="#align-tab">Align</a>
+    <a href="#repair-tab">Repair</a>
+    <a href="#repair-rebuild">&nbsp;&nbsp;Rebuild</a>
+    <a href="#repair-diagnose">&nbsp;&nbsp;Diagnose</a>
+    <a href="#repair-patch">&nbsp;&nbsp;Patch</a>
+    <a href="#stamp">&nbsp;&nbsp;&nbsp;&nbsp;Stamp</a>
+    <a href="#optimize-tab">Optimize</a>
+    <a href="#finish-tab">Finish</a>
+
+    <div class="group-label">Advanced y Settings</div>
+    <a href="#advanced-research">Research</a>
+    <a href="#advanced-diagnostics">Diagnostics</a>
+    <a href="#settings">Settings</a>
+
+    <div class="group-label">Conceptos clave</div>
+    <a href="#reference-scale">Referencia y escala real</a>
+    <a href="#poisson">Cómo funciona Rebuild</a>
+    <a href="#density-modes">Modos de densidad</a>
+    <a href="#surface-fit">Surface Fit</a>
+    <a href="#seam-material">Seam y Material</a>
+
+    <div class="group-label">Uso en la práctica</div>
+    <a href="#scenarios">Casos habituales</a>
+    <a href="#troubleshooting">Solución de problemas</a>
+    <a href="#debug-mode">Debug Mode</a>
+
+    <div class="group-label">Consulta</div>
+    <a href="#glossary">Glosario</a>
+    <a href="#literature">Bibliografía</a>
+    <a href="#changelog">Historial de cambios</a>
+  </nav>
+</div>
+
+<div id="content">
+
+  <h1>MeshVisor</h1>
+  <div class="subtitle">Repare mallas escaneadas en Blender con las propias mediciones del escaneo.</div>
+
+  <section id="intro">
+    <h2>Qué es</h2>
+    <p>
+      MeshVisor es un complemento de Blender para el paso entre un escaneo 3D y un modelo utilizable. La
+      fotogrametría y los escaneos láser salen con agujeros donde la cámara no pudo ver, solapas plegadas bajo
+      sí mismas, restos dispersos y una escala arbitraria. MeshVisor los repara y, siempre que puede, los
+      repara <b>a partir de mediciones reales</b> y no por conjetura.
+    </p>
+    <p>
+      Su idea distintiva es una <b>nube de puntos de referencia</b>, normalmente un escaneo láser. La malla
+      fotogramétrica se ajusta a la nube y de ella se obtiene su escala real. Después, las zonas dañadas se
+      reconstruyen a partir de los puntos medidos, y antes de aceptar el resultado se ve cuánto se aleja de ellos.
+      Para los agujeros sin datos de referencia, un parche clásico rellena el hueco y reproduce el tamaño de los
+      triángulos, la curvatura y el detalle superficial de su entorno.
+    </p>
+    <div class="callout">
+      <b>Solo un agujero:</b> Repair › Patch: seleccione una arista del agujero → <code>Mark Hole Boundary</code> →
+      <code>Patch</code>.<br>
+      <b>Con un escaneo láser:</b> Reference (cargue la nube) → Align (<code>Fit to Reference</code>) →
+      Repair › Rebuild (<code>Rebuild &amp; Repair</code> → revise las cifras → <code>Accept Repair</code>).
+    </div>
+    <p>
+      Los modelos físicos (placas de curvas de nivel, DXF, bases para impresión 3D) están en un complemento aparte, <b>ModelVisor</b>.
+    </p>
+  </section>
+
+  <section id="philosophy">
+    <h2>Filosofía</h2>
+
+    <h3>La verdad histórica, no una superficie lisa</h3>
+    <p>
+      El escaneo de un edificio o de un objeto es un documento. MeshVisor no hace ajustes ni aproximaciones
+      ocultos: una reparación nunca debe pasar por original. Sigue la regla que aplican los restauradores en las
+      reintegraciones volumétricas de objetos arqueológicos: lo añadido es discernible de cerca y armoniza con el
+      conjunto a distancia.
+    </p>
+    <ul>
+      <li>Las zonas reconstruidas y parcheadas pueden llevar su propio <b>material de reconstrucción</b>.</li>
+      <li><a href="#stamp">Stamp</a> muestra sus reparaciones en el Reconstruction Colour (color de reconstrucción), entonado o en tinta plana, y marca cada cara que ha modificado (<code>mv_stamped</code>). El color nunca se funde con el original alrededor de una reparación.</li>
+      <li>Suavizar la unión en un borde solo se permite en la geometría, cuando elimina un escalón que el escaneo nunca tuvo, y nunca en el color.</li>
+      <li>El relieve copiado de otra zona se puede desactivar (Relief Strength 0), de modo que un modelo de levantamiento muestre solo lo que se midió en ese lugar.</li>
+    </ul>
+
+    <h3>Mediciones antes que invenciones</h3>
+    <p>
+      Un agujero relleno es una afirmación sobre una superficie que nadie vio. Cuando un escaneo de referencia
+      tiene puntos reales en esa zona, MeshVisor reconstruye a partir de ellos. Cuando no los tiene, lo indica y
+      recurre a un parche que solo prolonga la superficie circundante. La zona reconstruida puede llevar su propio
+      material, la convención de la conservación para las reintegraciones, de modo que siga siendo identificable
+      más adelante.
+    </p>
+
+    <h3>Basado en la bibliografía</h3>
+    <p>
+      Los algoritmos principales proceden de trabajos publicados de procesamiento geométrico: remallado isótropo y
+      adaptativo a la curvatura, métricas de error cuádrico, alisado (fairing) biarmónico, reconstrucción Screened
+      Poisson, ICP con la similitud en forma cerrada de Umeyama, normales por PCA. Véase <a href="#literature">Bibliografía</a>.
+    </p>
+
+    <h3>Previsualizar, medir y después aceptar</h3>
+    <p>
+      Los pasos destructivos muestran su resultado antes de aplicarse. Rebuild &amp; Repair deja su parche como un
+      objeto aparte, con su desviación respecto al escaneo, hasta que usted lo acepta con <b>Accept</b> o lo rechaza con <b>Reject</b>.
+      Las herramientas de selección seleccionan; no borran. Cada operador se deshace con un solo
+      <span class="kbd">Ctrl+Z</span>.
+    </p>
+
+    <h3>Primero lo sencillo, sin que falte nada</h3>
+    <p>
+      Las cinco pestañas muestran el camino habitual. Los parámetros que cambian <i>cómo</i> se obtiene un resultado
+      (Settings Sweep, parámetros internos de Poisson, herramientas de depuración) están en la zona <b>Advanced</b> y en
+      <b>Show Details</b>, apartados hasta que los necesite.
+    </p>
+  </section>
+
+  <section id="audience">
+    <h2>A quién va dirigido</h2>
+    <h3>Adecuado para</h3>
+    <ul>
+      <li><b>Fotogrametría de edificios, ruinas, monumentos y terreno</b>, sobre todo cuando existe un escaneo láser del mismo lugar.</li>
+      <li><b>Documentación y restauración del patrimonio</b>: reconstrucciones que se pueden medir y que siguen siendo identificables después.</li>
+      <li><b>Limpieza de escaneos en bruto</b>: vértices sin soldar, uniones de borde, solapas plegadas, restos sueltos, astillas de área cero.</li>
+      <li><b>Objetos y piezas</b> con agujeros debidos a los ángulos muertos de la cámara.</li>
+    </ul>
+    <h3>Menos adecuado para</h3>
+    <ul>
+      <li><b>CAD de precisión</b>. Los cilindros y planos exactos se hacen mejor con las herramientas de modelado de Blender o con software CAD.</li>
+      <li><b>Parches muy grandes</b> (más de unas 50 000–70 000 caras de una vez). Patch y Remesh están escritos en Python puro, así que conviene dividir los agujeros grandes en secciones. Rebuild, que ejecuta Poisson como programa nativo, maneja mucho mejor las regiones grandes.</li>
+      <li><b>Convertir una nube de puntos en bruto en un modelo completo.</b> Rebuild reconstruye regiones; para un modelo completo, la herramienta adecuada es un software específico de fotogrametría.</li>
+    </ul>
+  </section>
+
+  <section id="install">
+    <h2>Instalación</h2>
+    <ol>
+      <li>Si hay una versión anterior instalada: <code>Edit → Preferences → Add-ons</code>, busque MeshVisor y pulse <b>Remove</b>.</li>
+      <li>Instale el <code>.zip</code>: arrástrelo a la ventana de Blender o use <code>Install from Disk</code> en el mismo menú.</li>
+      <li>Marque la casilla para activarlo. El panel está en la barra lateral del visor 3D (<span class="kbd">N</span>), pestaña <b>MeshVisor</b>.</li>
+    </ol>
+    <p>
+      Probado en Blender 4.5 – 5.3. Rebuild usa <b>PoissonRecon</b> y <b>SurfaceTrimmer</b> de Michael Kazhdan
+      (licencia MIT). Las compilaciones para Windows y Linux vienen incluidas en el complemento. En macOS,
+      compílelas a partir del código fuente y después indique su ubicación en
+      <a href="#settings">Settings › Advanced › Rebuild Executables</a>. <code>Check Executables</code>
+      confirma que se encuentran.
+    </p>
+    <div class="callout warn">
+      <b>Desinstale la versión antigua antes de instalar un zip nuevo.</b> El complemento es una carpeta con muchos
+      archivos, por lo que instalarlo encima de una copia antigua puede dejar archivos obsoletos.
+    </div>
+  </section>
+
+  <section id="workflow">
+    <h2>Flujo general</h2>
+    <div class="flow">
+      <div class="step">Reference</div><span class="arrow">→</span>
+      <div class="step">Align</div><span class="arrow">→</span>
+      <div class="step">Repair</div><span class="arrow">→</span>
+      <div class="step">Optimize</div><span class="arrow">→</span>
+      <div class="step">Finish</div>
+    </div>
+    <ol>
+      <li><b>Reference</b>: cargue la nube de puntos de referencia, hágala legible en el visor y recorte lo que no necesite.</li>
+      <li><b>Align</b>: ajuste la malla a la nube (y recupere su escala real), o alinee varios escaneos entre sí.</li>
+      <li><b>Repair</b>, tres subsecciones de una misma tarea:
+        <ul>
+          <li><b>Rebuild</b>: reconstruir una región dañada a partir de la nube.</li>
+          <li><b>Diagnose</b>: encontrar y corregir problemas generales de la malla.</li>
+          <li><b>Patch</b>: rellenar un agujero sin datos de referencia.</li>
+        </ul>
+      </li>
+      <li><b>Optimize</b>: reajustar la densidad de triángulos en una selección, normalmente un parche recién creado.</li>
+      <li><b>Finish</b>: validar el resultado y corregir lo que quede antes de exportar.</li>
+    </ol>
+    <p>
+      Sin un escaneo de referencia, empiece directamente en <b>Repair</b>: Diagnose y después Patch. La cabecera
+      muestra una indicación de una línea con el <b>siguiente paso</b>, y el botón <b>?</b> abre esta página en la
+      sección en la que se encuentra. El botón <b>⚙</b> abre <a href="#settings">Settings</a>. El pequeño conmutador
+      <b>Advanced</b> bajo las pestañas abre <a href="#advanced-research">Research</a> y
+      <a href="#advanced-diagnostics">Diagnostics</a>.
+    </p>
+  </section>
+
+  <hr class="section-rule">
+
+  <section id="reference-tab">
+    <h2>Reference</h2>
+    <p>
+      La referencia es una <b>nube de puntos métrica</b>, normalmente un escaneo láser. Es lo único de la escena
+      que conoce los metros reales, así que nunca se mueve: es la malla la que se ajusta a ella (véase
+      <a href="#reference-scale">Referencia y escala real</a>).
+    </p>
+
+    <h4>1 — Cargar la nube</h4>
+    <div class="tool-card">
+      <span class="tool-name">Load Point Clouds from Folder</span>
+      <p>Carga todas las nubes de puntos de una carpeta (opcionalmente con <b>Include Subfolders</b>). Después elija el escaneo láser como referencia: es el que está a escala real.</p>
+    </div>
+    <div class="tool-card">
+      <span class="tool-name">Import from Meshroom <span class="badge">plegado</span></span>
+      <p>Importa una nube de puntos (<code>.ply</code> o <code>.abc</code>) o una malla, con o sin textura, directamente desde la salida de Meshroom, sin pasar por CloudCompare.</p>
+    </div>
+    <div class="tool-card">
+      <span class="tool-name">Full-Resolution Source</span>
+      <p>
+        Vincule el archivo original de la nube con densidad completa (PLY binario). Rebuild lee entonces del disco solo
+        la región que necesita, de modo que nunca hace falta cargar la nube completa en Blender. Para visualizar y ajustar
+        basta una copia ligera y submuestreada en la escena. <b>Source</b> elige qué datos usa Rebuild: <i>Referenced</i>
+        (el archivo) o <i>Loaded</i> (el objeto de la escena).
+      </p>
+    </div>
+
+    <h4>2 — Hacerla legible</h4>
+    <table>
+      <tr><th>Control</th><th>Qué hace</th></tr>
+      <tr><td>Point Size</td><td>Tamaño con que se dibujan los puntos. Solo cambia lo que se ve.</td></tr>
+      <tr><td>Viewport Thinning</td><td>Los puntos más próximos entre sí que esta distancia se dibujan como uno solo, mediante un modificador de Geometry Nodes. Solo afecta a la visualización: el ajuste y Rebuild siempre usan los puntos reales. Al lado están <b>Apply</b>, <b>Suspend</b> y <b>Reset</b>.</td></tr>
+      <tr><td>Sphere View</td><td>Dibuja los puntos como pequeñas esferas, con radio y material ajustables, como solución provisional a errores del visor en los que las nubes grandes pierden puntos.</td></tr>
+    </table>
+
+    <h4>3 — Recortar</h4>
+    <div class="tool-card">
+      <span class="tool-name">Subtraction Volumes</span>
+      <p>
+        Formas que eliminan puntos de la fuente a resolución completa (<b>Cut Inside</b>) o conservan solo lo que queda
+        dentro de ellas (<b>Keep Inside Only</b>). <code>Add</code> coloca una caja, <code>Draw</code> la dibuja arrastrando
+        en el visor y <code>Convert Selected</code> convierte sus propias mallas en volúmenes.
+        <code>Preview Exclusion</code> muestra el resultado antes de que nada sea definitivo. Un volumen <i>Keep Inside Only</i>
+        es también la forma de indicar a <a href="#repair-rebuild">Rebuild</a> qué región debe reconstruir.
+      </p>
+    </div>
+    <div class="tool-card">
+      <span class="tool-name">Delete Points in Selection's Bounding Box</span>
+      <p>Elimina puntos de los datos reales, no solo de la visualización. Antes, marque la casilla de confirmación.</p>
+    </div>
+  </section>
+
+  <section id="align-tab">
+    <h2>Align</h2>
+
+    <h3>Ajustar una malla a la referencia</h3>
+    <ol>
+      <li>Seleccione el <b>modelo</b> (la malla fotogramétrica). La nube no se mueve.</li>
+      <li>Colóquelo <b>aproximadamente a ojo</b>: ICP afina una alineación, pero no puede encontrarla de la nada.</li>
+      <li><code>Fit to Reference</code>. El panel informa del residuo y, con <b>Recover Scale</b> activado, del factor de escala: lo que vale en la realidad una unidad de su modelo.</li>
+    </ol>
+    <p>
+      <b>Limit Scale Change</b> (5 % por defecto) y <b>Limit Movement</b> mantienen el ajuste bajo control. Tras una
+      colocación manual cuidadosa, un ajuste que pretende cambiar el tamaño un 30 % se ha enganchado a la parte
+      equivocada de la nube. Cuando se alcanza un límite, el panel lo indica.
+    </p>
+    <h4>Advanced</h4>
+    <table>
+      <tr><th>Ajuste</th><th>Significado</th></tr>
+      <tr><td>Rough Fit First</td><td>Antes del ajuste real, coloca el modelo en el centro de la nube y aproximadamente a su tamaño.</td></tr>
+      <tr><td>Ignore Worst Matches</td><td>Fracción de pares de puntos que se conservan en cada pasada, empezando por los más próximos (0.8). Los dos escaneos nunca cubren exactamente la misma zona.</td></tr>
+      <tr><td>Passes · Points Used</td><td>Límite de iteraciones (normalmente se detiene antes) y tamaño de la muestra. Decenas de miles de puntos bien repartidos fijan el ajuste tan bien como millones.</td></tr>
+    </table>
+
+    <h3>Alinear varios escaneos <span class="badge">plegado</span></h3>
+    <p>Para varios escaneos del mismo lugar, ya en unidades reales.</p>
+    <ul>
+      <li><b>Target</b> y <b>Anchor</b>: <i>Chain</i> alinea cada escaneo con el anterior; <i>Fixed Base</i> alinea todos los escaneos con la misma base.</li>
+      <li><b>Isolate for Alignment</b> muestra solo el origen y el destino, de modo que los clics caen donde usted quiere y el visor va más ligero. <code>Exit Isolation</code> restaura la escena. No filtra los puntos que usa ICP.</li>
+      <li><code>Align to Target (ICP)</code>. <b>Estimate Scale</b> está desactivado por defecto: los escaneos ya comparten unidades, y calcular la escala a partir de un solapamiento parcial puede introducir deriva.</li>
+      <li><b>¿Solapamiento insuficiente?</b> Marque a mano puntos coincidentes con la herramienta <code>Mark Correspondence Point</code>, primero en el lado Source y después en el lado Target, y luego use <code>Align from Marked Points</code>.</li>
+      <li><b>Lock Pair</b> emparenta el escaneo alineado con su destino sin mover ninguno de los dos; así, si más adelante se alinea un tercer escaneo con el par, ambos se mueven juntos como una única unidad rígida.</li>
+    </ul>
+  </section>
+
+  <section id="repair-tab">
+    <h2>Repair</h2>
+    <p>
+      Una tarea, tres vías de entrada. La pequeña fila bajo la pestaña cambia entre ellas:
+      <a href="#repair-rebuild">Rebuild</a> (a partir de la nube de referencia), <a href="#repair-diagnose">Diagnose</a>
+      (problemas generales de la malla) y <a href="#repair-patch">Patch</a> (rellenar un agujero sin datos de referencia).
+      El panel muestra lo que está marcado y seleccionado, y una indicación para el siguiente paso.
+    </p>
+  </section>
+
+  <section id="repair-rebuild">
+    <h2>Repair › Rebuild</h2>
+    <p>
+      Reconstruye una región dañada <b>a partir de los puntos medidos</b>, en lugar de inventar geometría sobre el
+      hueco. Alrededor de un agujero de fotogrametría, la superficie suele plegarse bajo sí misma, de modo que el borde
+      visible no es el borde topológico. Rellenar ese borde crea una membrana falsa, y el remallado por vóxeles se
+      confunde. La nube de referencia, en cambio, tiene mediciones reales en esa zona.
+    </p>
+    <div class="callout">
+      Necesita una nube de referencia (<a href="#reference-tab">Reference</a>) ajustada a la malla
+      (<a href="#align-tab">Align</a>). El panel le avisa si falta alguna de las dos.
+    </div>
+
+    <h4>1 — Seleccionar la región</h4>
+    <ul>
+      <li><b>Rebuild</b> (solo la nube, una pieza independiente): seleccione un volumen de recorte <i>Keep Inside Only</i>, en Object Mode.</li>
+      <li><b>Rebuild &amp; Repair</b> (malla y nube, continuo con la malla): seleccione también la malla o, en Edit Mode, los vértices alrededor del agujero.</li>
+    </ul>
+
+    <h4>2 — Rebuild</h4>
+    <table>
+      <tr><th>Ajuste</th><th>Significado</th></tr>
+      <tr><td>Detail</td><td>Profundidad del octree. Cada nivel reduce a la mitad el detalle más pequeño que puede representar. El octree es adaptativo y no refina donde tiene demasiado pocos puntos.</td></tr>
+      <tr><td>Drop Folded-Under Geometry</td><td>Antes de reconstruir, descarta la malla orientada hacia abajo, para que el pliegue bajo el borde de un agujero no arrastre la superficie hacia abajo.</td></tr>
+      <tr><td>Mark as Reconstruction</td><td>Asigna al nuevo parche un material distinto y neutro (color ajustable). Es la convención de la conservación, de modo que la reintegración siga siendo identificable.</td></tr>
+    </table>
+
+    <h4>Preparación de la nube <span class="badge">antes de Rebuild</span></h4>
+    <table>
+      <tr><th>Opción</th><th>Qué hace</th></tr>
+      <tr><td>Remove Vegetation</td><td>Deja fuera de la reconstrucción la hiedra, las malas hierbas y los arbustos. <b>Green</b> usa el color (el índice de exceso de verde, por lo que necesita una nube con color). <b>Scatter</b> detecta los puntos cuyos vecinos no forman una superficie, como la hiedra oscura que no es lo bastante verde. <code>Preview Vegetation</code> muestra en verde lo que se dejaría fuera.</td></tr>
+      <tr><td>Align Cloud Here</td><td>Antes de reconstruir, ajusta la nube a la malla solo en esta región (ICP local) y lleva los puntos sobre ella. La malla nunca se mueve. <b>Max Move</b> detiene un ajuste que tiende a deslizarse sobre la superficie equivocada. Úselo cuando una alineación global todavía se desvía unos centímetros en esta zona.</td></tr>
+      <tr><td>Orient Normals from Mesh</td><td>Asigna a cada punto de la nube el lado exterior de la superficie de malla más próxima. Las normales estimadas en un muro de mampostería irregular se invierten al azar, y la reconstrucción encierra entonces pequeñas burbujas. Solo en Rebuild &amp; Repair.</td></tr>
+      <tr><td>Trust the Cloud Inside</td><td>Dentro de la selección, reconstruye solo a partir de la nube. La malla aporta únicamente el anillo que la rodea, de modo que el resultado sigue uniéndose a ella. Para una región en la que la malla es <i>errónea</i> (abombamientos, un muro en el lugar equivocado), no solo incompleta.</td></tr>
+      <tr><td>Accept Replaces Covered Mesh</td><td>Al aceptar con Accept, borra las caras de la malla que cubre el parche antes de unirlo. Desactivado: el parche se añade y el original queda debajo.</td></tr>
+    </table>
+    <div class="callout">
+      Si la <b>Full-Resolution Source</b> vinculada no coincide en esta región con la nube de la escena (está
+      desplazada o no la cubre), Rebuild usa en su lugar la nube de la escena y lo indica. Vuelva a vincular el archivo
+      correcto, o rehaga la alineación, para recuperar la resolución completa.
+    </div>
+
+    <h4>3 — Revisar, limpiar y después Accept o Reject</h4>
+    <p>
+      El parche sigue siendo un objeto aparte, ya medido: número de caras, aristas non-manifold y desviación
+      <b>mediana</b> y <b>del percentil 95</b> respecto a los puntos de referencia. Antes de aceptarlo se le pueden
+      aplicar dos limpiezas, ambas ajustables después con <span class="kbd">F9</span>:
+    </p>
+    <ul>
+      <li><code>Remove Drips</code> elimina los «carámbanos» colgantes que Poisson deja bajo voladizos y aberturas.</li>
+      <li><code>Regularize Walls</code> endereza las caras de los muros, ya sea con <b>Keep Relief</b> (las piedras se conservan) o con <b>Flatten</b>.</li>
+    </ul>
+    <p>
+      <code>Accept Repair</code> suelda el parche a la malla. <code>Reject</code> lo descarta. Nada se da por
+      definitivo sin que usted lo vea.
+    </p>
+    <p>
+      Para comparar varias reconstrucciones una al lado de otra, use
+      <a href="#advanced-research">Advanced › Research</a>. Los parámetros internos de Poisson (adherencia a los puntos,
+      promediado del ruido, recorte, márgenes, ponderación por confianza) están en <b>Show Details</b> y se explican en
+      <a href="#poisson">Cómo funciona Rebuild</a>.
+    </p>
+
+    <h4 id="fuse">Fuse with Reference <span class="badge">experimental</span></h4>
+    <p>
+      Lleva la malla sobre la nube de referencia en lugar de reconstruirla. No se construye nada nuevo, así que no hay
+      ningún parche que recortar, revisar y soldar: la malla conserva sus vértices, caras y UV. En Edit Mode actúa sobre
+      los vértices seleccionados y se atenúa a lo largo de unos cuantos anillos a su alrededor (<b>Blend Rings</b>); en
+      Object Mode, sobre toda la malla.
+    </p>
+    <ul>
+      <li>Cada vértice mide a qué distancia está la nube a lo largo de su normal, y con qué grado de certeza. Se calcula una única corrección suave para toda la región; donde la nube no tiene puntos, la corrección se toma de los vecinos, de modo que no aparece ningún escalón donde termina la nube.</li>
+      <li>El grado de suavizado de la corrección se mide a partir de los datos. Con una nube ruidosa, la malla conserva su propio detalle y solo se corrige su deriva; con una nube limpia y densa, adopta el detalle de la nube.</li>
+      <li><b>Thickness Guard</b> (activado): en un muro delgado, una cara solo sigue los puntos de la mitad más próxima del muro, de modo que el lado que el escáner no vio no se arrastra sobre el lado que sí vio.</li>
+      <li>Los agujeros siguen siendo agujeros: rellénelos primero con Patch y después Fuse llevará el parche sobre la nube. Si la nube alcanza menos del 5 % de los vértices, no cambia nada y el mensaje indica que primero hay que alinear.</li>
+    </ul>
+
+    <h4 id="sections">Sections <span class="badge">experimental</span></h4>
+    <p>
+      Corta la parte seleccionada de la malla en secciones paralelas, una cada <b>Spacing</b>, para que pueda ver qué
+      hacen la malla y la nube y corregir la malla a mano. Cada sección muestra la malla actual (verde), la malla antes
+      de Fuse (rojo), los puntos de la nube (gris) y las líneas editables (amarillo), cada una con su propio botón de
+      activación; las flechas recorren las secciones y la vista gira para quedar frente a cada una.
+    </p>
+    <ul>
+      <li><code>Edit Section</code>: mueva vértices de las líneas amarillas (por ejemplo, para devolver un abombamiento a su alineación) o enderece un tramo de ellos con <code>Straighten</code>. Borrar puntos (<span class="kbd">X</span>) elimina esa parte de la malla, como un goterón que cuelga delante de un muro.</li>
+      <li><code>Apply to Mesh</code>: la malla sigue las líneas. Un punto movido tira con firmeza y los puntos sin tocar retienen suavemente, de modo que la edición queda localizada. Después, las secciones se vuelven a cortar a partir de la nueva malla.</li>
+    </ul>
+  </section>
+
+  <section id="repair-diagnose">
+    <h2>Repair › Diagnose</h2>
+    <h3>Estado de la malla</h3>
+    <div class="tool-card">
+      <span class="tool-name">Analyze</span>
+      <p>Examina la malla una sola vez, solo al hacer clic, y resume agujeros, uniones de borde, geometría suelta y caras de área cero.</p>
+    </div>
+    <div class="tool-card">
+      <span class="tool-name">Auto Repair</span>
+      <p>Weld Entire Mesh → Aggressive Auto-Repair de las uniones de borde → Analyze, de una sola vez. Un solo <span class="kbd">Ctrl+Z</span> lo deshace todo.</p>
+    </div>
+    <div class="tool-card">
+      <span class="tool-name">Auto Patch Small Holes</span>
+      <p>Rellena todos los agujeros cuya área sea igual o inferior a <b>Max Hole Area</b>. Eso cubre las decenas de pequeños defectos de escaneo y deja intactas las aberturas reales mayores que el límite. <b>Scale Factor</b> ajusta el límite cuando 1 unidad ≠ 1 metro.</p>
+    </div>
+    <div class="tool-card">
+      <span class="tool-name">Smooth Surface</span>
+      <p>
+        Reduce el ruido de reconstrucción en zonas planas (muros, suelos) sin redondear las aristas reales. Las aristas
+        más vivas que el <b>Feature Angle</b>, y todas las aristas abiertas, nunca se mueven. Controles: <b>Strength</b>,
+        <b>Passes</b>, un <b>Vertex Group</b> pintado opcional para una transición difuminada, y
+        <b>Selected Only</b>.
+      </p>
+    </div>
+
+    <h3>Limpieza general</h3>
+    <table>
+      <tr><th>Herramienta</th><th>Selecciona</th></tr>
+      <tr><td>Select Loose Islands</td><td>Todas las piezas desconectadas excepto la mayor.</td></tr>
+      <tr><td>Select Loose Edges/Verts</td><td>Geometría de alambre sin cara.</td></tr>
+      <tr><td>Select Interior Faces</td><td>Caras escondidas dentro del volumen (superficies duplicadas tipo «manta»).</td></tr>
+      <tr><td>Select Downward-Facing Faces</td><td>La cara inferior de las solapas plegadas, dentro de un cono ajustable.</td></tr>
+    </table>
+    <div class="callout">Estas herramientas solo seleccionan. Revise la selección y bórrela usted mismo (<span class="kbd">X</span>).</div>
+
+    <h3>Boundary health (estado del borde) <span class="badge">comprobar antes de marcar un agujero</span></h3>
+    <table>
+      <tr><th>Herramienta</th><th>Qué hace</th></tr>
+      <tr><td>Repair Boundary Junctions</td><td>Una soldadura local segura y una limpieza de elementos degenerados donde se encuentran 3 o más aristas abiertas.</td></tr>
+      <tr><td>Select Boundary Junctions</td><td>Muestra exactamente esos puntos.</td></tr>
+      <tr><td>Aggressive Auto-Repair <span class="badge slow">mayor riesgo</span></td><td>Una soldadura más amplia, que además separa los cruces limpios de «dos agujeros que se tocan en un punto».</td></tr>
+      <tr><td>Weld Entire Mesh</td><td>Para escaneos en bruto sin soldar en ninguna parte (uniones de borde a lo largo de todo un contorno).</td></tr>
+    </table>
+    <p><b>At a Junction, Prefer</b>: Largest o Smallest Hole decide qué bucle se traza cuando dos agujeros se tocan.</p>
+  </section>
+
+  <section id="repair-patch">
+    <h2>Repair › Patch</h2>
+    <p>Rellena un agujero sin datos de referencia y reproduce el tamaño de los triángulos, la curvatura y el detalle superficial de su entorno. Funciona en Edit Mode.</p>
+
+    <h4>1 — Marcar el agujero</h4>
+    <p>
+      Seleccione de 1 a 3 aristas abiertas del agujero. <code>Select Full Boundary Loop</code> muestra todo el contorno,
+      y <code>Mark Hole Boundary</code> lo guarda en la malla. <b>Weld Distance</b> fusiona primero los vértices duplicados:
+      los escaneos en bruto suelen conservar un vértice independiente por cara. Si el bucle no se cierra, consulte
+      <a href="#repair-diagnose">Estado del borde</a>.
+    </p>
+
+    <h4>2 — Neighborhood</h4>
+    <p>Hasta qué distancia del borde llega el análisis. <code>0 m</code> significa la primera fila de caras. Un radio mayor da más contexto a Surface Fit.</p>
+
+    <h4>3 — Rellenar</h4>
+    <div class="tool-card">
+      <span class="tool-name">Clean Hole First <span class="badge default">activado por defecto</span></span>
+      <p>
+        Antes de rellenar, elimina la geometría huérfana en el agujero marcado y a su alrededor:
+      </p>
+      <ul>
+        <li>aristas y vértices sin cara, como los que quedan tras borrar una zona más grande con <i>Delete › Only Faces</i>;</li>
+        <li>pequeños fragmentos sueltos de caras;</li>
+        <li>aletas que cuelgan de una arista non-manifold;</li>
+        <li>caras que atraviesan a sus vecinas cerca del borde.</li>
+      </ul>
+      <p>
+        Si al eliminar una cara se abre un pequeño agujero aparte, ese punto se vuelve a cerrar. Los agujeros de otras
+        zonas nunca se tocan. Después se vuelve a trazar el borde, y el mensaje de resultado enumera lo que se ha eliminado.
+      </p>
+    </div>
+    <p>
+      Elija un <a href="#density-modes">Density Mode</a>, <a href="#surface-fit">Surface Fit</a>,
+      <a href="#seam-material">Seam y Material</a>, y después pulse <code>Patch</code>. Se ejecuta en segundo plano
+      con una barra de progreso (Refine → Relax → Randomize). Pulse <span class="kbd">Esc</span> para cancelar.
+    </p>
+
+    <h4 id="stamp">Stamp — copiar el relieve del muro sobre un elemento <span class="badge">experimental</span></h4>
+    <p>
+      Las herramientas Parche y Pincel corrector de Photoshop, para un muro. Para algo fijado a un muro que no debería
+      estar en el modelo: una tubería, un cable, una mata de hiedra, un carámbano dejado por Rebuild, una marca vial. El
+      elemento se aplana sobre la superficie en la que se apoya y se le superpone el relieve de otra parte de esa
+      superficie. La reparación queda visible, igual que los restauradores dejan reconocible una reintegración en un
+      objeto (véase <a href="#philosophy">Filosofía</a>).
+    </p>
+    <ol>
+      <li>Seleccione las caras del elemento (con un poco del muro que lo rodea).</li>
+      <li><code>Pick Source</code> y después haga clic en la parte del muro de la que quiere copiar, como con Alt+clic en el Tampón de clonar. El cursor 3D marca el punto. El botón del cursor que hay al lado usa el cursor 3D en su posición actual.</li>
+      <li><code>Stamp Selected Faces</code>. Después, ajuste en <span class="kbd">F9</span>:</li>
+    </ol>
+    <table>
+      <tr><th>Ajuste</th><th>Significado</th></tr>
+      <tr><td>Relief Strength</td><td>Cuánto relieve de la fuente se superpone. <b>0</b> no copia nada: el muro simplemente continúa de forma suave bajo el elemento eliminado. Use 0 en un modelo de levantamiento, donde no debe aparecer relieve que no se haya medido en ese lugar.</td></tr>
+      <tr><td>Detail Size</td><td>Qué cuenta como relieve (copiado de la fuente) y qué cuenta como forma propia del muro (tomada del entorno del elemento). Aproximadamente una piedra. <b>0</b> = automático: 6 longitudes de arista de la malla, como mínimo 15 cm, ya que una malla gruesa no puede reproducir un relieve más corto.</td></tr>
+      <tr><td>Angle, Mirror, Shift Along / Up</td><td>Giran, reflejan y desplazan la fuente a lo largo del muro, por ejemplo para alinear las hiladas.</td></tr>
+      <tr><td>Heal Edge</td><td>Funde el relieve copiado con el relieve real en el borde, para que se una sin escalón. Solo geometría. Desactivado: una copia simple.</td></tr>
+      <tr><td>Repair Colour</td><td>Cómo se colorea la zona reparada. <b>Toned Copy</b> (predeterminado): la textura de la fuente, para que la superficie se siga leyendo, llevada hacia el Reconstruction Colour. <b>Reconstruction Colour</b>: solo ese color. En ambos casos, nunca se funde con el original que la rodea.</td></tr>
+      <tr><td>Tone</td><td>Cuánto se acerca una Toned Copy al Reconstruction Colour, desde un cuarto (nunca menos, para que no pueda pasar por original) hasta el color completo.</td></tr>
+    </table>
+    <p>
+      El color va donde la malla lo guarda: los téxeles de la selección en la textura de imagen (varias páginas de textura
+      y teselas UDIM, como las de Meshroom o RealityCapture, no son un problema), o sus colores de vértice. Una malla que
+      no tiene ninguna de las dos cosas recibe en las caras estampadas el material compartido <b>MeshVisor Patch</b>. El Reconstruction Colour
+      es el color de ese material (<i>Mark as Reconstruction</i>, que también usan Patch y Rebuild).
+    </p>
+    <p>
+      Solo se mueven los vértices de dentro de la selección; la malla conserva sus caras. Las caras estampadas reciben el
+      atributo de cara <code>mv_stamped</code> = 1, de modo que queda constancia visible de qué relieve se midió y cuál se copió.
+      <span class="kbd">Ctrl+Z</span> deshace la geometría.
+    </p>
+    <p>
+      La textura repintada solo cambia en memoria: guarde la imagen (<i>Image › Save</i>) para conservarla.
+      <span class="kbd">Ctrl+Z</span> en Edit Mode no deshace los píxeles de la imagen; por eso <code>Restore Texture</code>
+      restaura todos los téxeles que Stamp ha repintado en esta sesión.
+    </p>
+    <div class="callout">
+      Stamp sigue un único plano: sirve para muros y suelos, no para esquinas ni bóvedas, y el mensaje avisa cuando la
+      zona alrededor de la selección dista mucho de ser plana. Si la fuente se solapa con la selección o se sale de la
+      malla, el mensaje lo indica; desplácela con Shift Along / Up.
+    </div>
+  </section>
+
+  <section id="optimize-tab">
+    <h2>Optimize</h2>
+    <p>
+      Reajusta la densidad de triángulos en las caras seleccionadas, normalmente un parche recién creado, aunque sirve
+      cualquier parte de la malla, en relación con la malla que las rodea, y después afloja el resultado para que no
+      parezca una cuadrícula subdividida.
+    </p>
+    <ul>
+      <li><b>Density Mode</b>, <b>Seam</b> y <b>Material</b>: véase <a href="#density-modes">Modos de densidad</a> y <a href="#seam-material">Seam y Material</a>.</li>
+      <li><b>Min Triangle Angle</b> (18°): un límite inferior a lo delgado que puede llegar a ser un triángulo durante los volteos de aristas.</li>
+      <li><b>Geometry Source</b>: por defecto, Optimize aprende el tamaño, el relieve y la forma de los triángulos de la malla que bordea la selección. <code>Pick Geometry Source</code> le permite señalar en su lugar una zona más representativa: pase el cursor por encima para previsualizar un círculo, gire la rueda para cambiar su tamaño y haga clic para confirmar.</li>
+      <li>El límite de caras por ejecución está en <a href="#settings">Settings › Performance</a> (20 000 por defecto).</li>
+    </ul>
+  </section>
+
+  <section id="finish-tab">
+    <h2>Finish</h2>
+    <p>Comprobaciones finales, una vez que la reparación tiene buen aspecto.</p>
+    <table>
+      <tr><th>Herramienta</th><th>Qué hace</th></tr>
+      <tr><td>Validate Asset</td><td>Asset Health: agujeros, uniones de borde, geometría suelta, caras de área cero.</td></tr>
+      <tr><td>Normals</td><td>Orienta hacia fuera la normal de cada cara.</td></tr>
+      <tr><td>Loose Geo</td><td>Borra los vértices y aristas que no pertenecen a ninguna cara.</td></tr>
+      <tr><td>Merge</td><td>Un último Merge by Distance sobre toda la malla (<b>Merge Distance</b> ajustable).</td></tr>
+    </table>
+    <p>Exporte con la orden de Blender <code>File › Export</code>. Para placas de curvas de nivel y DXF para modelos físicos, use ModelVisor.</p>
+  </section>
+
+  <hr class="section-rule">
+
+  <section id="advanced-research">
+    <h2>Advanced › Research</h2>
+    <p>
+      Para comparar reconstrucciones en lugar de fiarse de una sola. <b>Settings Sweep</b> ejecuta Poisson con 2 a 5
+      combinaciones de ajustes sobre el mismo volumen de recorte (solo la nube) y las dispone una al lado de otra. No hay
+      puntuación automática: una cifra que premia la cercanía a los puntos favorece el ajuste más ruidoso, mientras que una
+      persona ve de un vistazo ampollas o abombamientos.
+    </p>
+    <ul>
+      <li><code>Refine Sweep</code>: estrecha el intervalo alrededor de la variante en la que hace clic.</li>
+      <li><code>Preview Variant</code>, <code>Show All</code>, borrar variantes o <code>Clear All</code>. El historial se guarda por volumen de recorte.</li>
+      <li><code>Apply Settings from Selected</code> copia los ajustes de una variante a Rebuild. También puede usar <code>Save Preset</code>, <code>Load Preset</code> o <code>Export Table (CSV)</code>.</li>
+      <li><code>Weld Selected In Place</code> suelda exactamente la variante elegida a una malla en su posición real, en lugar de volver a ejecutar Poisson, que no daría la misma geometría.</li>
+    </ul>
+  </section>
+
+  <section id="advanced-diagnostics">
+    <h2>Advanced › Diagnostics</h2>
+    <p>
+      Estado de la malla (<code>Analyze</code>, <code>Auto Repair</code>, <code>Delete Zero-Area Faces</code>) junto a
+      <a href="#debug-mode">Debug Mode</a> y su registro: la capa del «¿por qué no ha funcionado?», apartada del
+      flujo de trabajo normal.
+    </p>
+  </section>
+
+  <section id="settings">
+    <h2>Settings <span style="font-weight:400; font-size:16px; color:var(--ink-soft);">(⚙ en la cabecera)</span></h2>
+    <table>
+      <tr><th>Sección</th><th>Contiene</th></tr>
+      <tr><td>Performance</td><td><b>Max Faces (Remesh)</b>: el tope por ejecución de Patch/Optimize. Si se fija un valor alto, aparece una advertencia.</td></tr>
+      <tr><td>Display</td><td><b>Show Details</b>: mediciones y ajustes más finos bajo los botones.</td></tr>
+      <tr><td>Quality</td><td><b>Sharp Edge Protection</b> (35°): las aristas más vivas que este ángulo nunca se colapsan durante el refinamiento Uniform.</td></tr>
+      <tr><td>Language</td><td>Inglés.</td></tr>
+      <tr><td>Advanced</td><td><b>Rebuild Executables</b> (una carpeta alternativa, más <code>Check Executables</code>), <a href="#debug-mode">Debug Mode</a> y su registro, <b>Saved Sessions</b> (registros que se escriben en disco mientras Debug Mode está activado, para que sobrevivan a un cierre inesperado) y un <b>Crash Diagnostic</b> para Settings Sweep.</td></tr>
+    </table>
+  </section>
+
+  <hr class="section-rule">
+
+  <section id="reference-scale">
+    <h2>Referencia y escala real</h2>
+    <p>
+      Una reconstrucción fotogramétrica tiene una escala arbitraria. Un escaneo láser es métrico. Por eso MeshVisor
+      trata la nube como referencia y mueve la malla: calcula la rotación, la posición y, con
+      <b>Recover Scale</b>, una escala uniforme. Para ello usa ICP (iterative closest point, punto más próximo iterativo)
+      con la transformación de similitud en forma cerrada de Umeyama en cada pasada. Se descarta una fracción de las
+      peores correspondencias, porque los dos escaneos nunca cubren exactamente la misma zona. El factor recuperado
+      indica lo que vale en la realidad una unidad de Blender de su modelo.
+    </p>
+    <p>
+      A los puntos sin normales, algo habitual en las nubes exportadas, se les estiman: un ajuste de plano local
+      (PCA) da la dirección de cada punto, y el lado exterior se propaga de forma coherente por todo el parche.
+      Así no es obligatorio pasar por CloudCompare.
+    </p>
+  </section>
+
+  <section id="poisson">
+    <h2>Cómo funciona Rebuild</h2>
+    <p>
+      Rebuild reúne los puntos de la nube en la región, más un anillo de superficie buena a su alrededor, el
+      <b>Context Margin</b>. Poisson necesita superficie real alrededor de todo el hueco para saber hacia dónde está el
+      exterior. Después ejecuta <b>Screened Poisson</b> (Kazhdan &amp; Hoppe) y recorta el resultado con <b>SurfaceTrimmer</b>.
+    </p>
+    <ul>
+      <li><b>Poisson siempre cierra la superficie.</b> Donde no hay puntos, inventa, y lo inventado se hincha hacia fuera. El recorte elimina la superficie que queda por debajo de un umbral de densidad. <b>Measure Trim Threshold</b> fija ese umbral a partir de los datos; también puede fijarlo usted a mano.</li>
+      <li><b>Stick to Points</b> atrae la superficie hacia los puntos. Más no siempre es mejor: seguir fielmente los puntos significa seguir también su ruido.</li>
+      <li><b>Noise Averaging</b> (muestras por nodo) impide que el octree se subdivida donde solo tiene ruido.</li>
+      <li><b>Patch Overhang</b> limita cuánto puede sobresalir de su selección el parche terminado. <b>Smallest Island</b> descarta el confeti que deja el recorte. <b>Cloud Points</b> limita cuántos puntos se usan.</li>
+      <li><b>Confidence Weighting</b> (opcional) hace que las zonas con detalle tiren con más fuerza que las planas y ruidosas. Es una heurística, no una garantía.</li>
+    </ul>
+    <p>
+      Con una <b>Full-Resolution Source</b> vinculada, la región se lee directamente del archivo PLY en disco, de modo que
+      los escaneos densos no tienen que estar dentro del archivo .blend.
+    </p>
+  </section>
+
+  <section id="density-modes">
+    <h2>Modos de densidad</h2>
+    <h3>Curvature-Adaptive <span class="badge default">predeterminado</span></h3>
+    <p>
+      Triángulos más finos donde la superficie real alrededor del agujero es curva o tiene detalle, y más gruesos donde es
+      plana. Los tamaños objetivo se muestrean punto a punto a lo largo del borde y se difunden hacia el interior. Suele ser
+      mucho más rápido que Uniform, porque genera menos triángulos.
+    </p>
+    <h3>Uniform (Match Neighborhood) <span class="badge slow">más lento</span></h3>
+    <p>Un mismo tamaño de triángulo en todo el parche, acorde con la costura. Úselo cuando la regularidad importe más que la velocidad.</p>
+  </section>
+
+  <section id="surface-fit">
+    <h2>Surface Fit</h2>
+    <p>Cómo se proyecta el parche sobre la superficie real alrededor del agujero para recoger su curvatura y su detalle.</p>
+    <h3>Project Along Normal <span class="badge default">predeterminado</span></h3>
+    <p>Sigue la normal de cada punto, dentro de una distancia acotada. Es rápido y fiable en terrenos complejos.</p>
+    <h3>Nearest Surface</h3>
+    <p>Toma el punto más próximo, sin límite de distancia. Es más lento en entornos grandes. Pruébelo donde Project se pliega en grietas profundas.</p>
+  </section>
+
+  <section id="seam-material">
+    <h2>Seam y Material</h2>
+    <h3>Seam</h3>
+    <ul>
+      <li><b>Crisp</b>: la unión queda exactamente como se generó.</li>
+      <li><b>Smooth</b>: una banda a ambos lados de la costura se alisa con una pasada bi-laplaciana iterativa, de modo que la unión se lee como una transición y no como una línea.</li>
+    </ul>
+    <h3>Material</h3>
+    <ul>
+      <li><b>Blend In</b>: el parche adopta el material circundante.</li>
+      <li><b>New 'Patch Material'</b>: un material distinto, de modo que la reparación siga siendo identificable.</li>
+    </ul>
+  </section>
+
+  <hr class="section-rule">
+
+  <section id="scenarios">
+    <h2>Casos habituales</h2>
+    <h3>Edificio o ruina: fotogrametría más un escaneo láser</h3>
+    <p>
+      Reference: cargue las nubes, vincule el PLY a resolución completa y submuestree la visualización. Align: acerque la
+      malla a ojo y después use <code>Fit to Reference</code> con Recover Scale. Repair › Rebuild: dibuje un volumen
+      <i>Keep Inside Only</i> sobre el daño, ejecute <code>Rebuild &amp; Repair</code>, lea la desviación y después
+      acepte con Accept. Para una zona difícil, ejecute antes un Settings Sweep en Advanced.
+    </p>
+    <h3>Escaneo en bruto, sin referencia</h3>
+    <p>
+      Repair › Diagnose: <code>Weld Entire Mesh</code>, después <code>Analyze</code> y después
+      <code>Auto Patch Small Holes</code>. A continuación, rellene con Patch cada agujero real con Clean Hole First
+      activado. Pase Optimize por los parches grandes y termine con Finish.
+    </p>
+    <h3>Objeto patrimonial cuyas reconstrucciones deben seguir siendo visibles</h3>
+    <p>Use <b>Mark as Reconstruction</b> (Rebuild) o <b>New 'Patch Material'</b> (Patch) con una costura Crisp. Stamp marca sus reparaciones por sí solo: entonadas o en el Reconstruction Colour, y con el atributo de cara <code>mv_stamped</code>.</p>
+    <h3>Varios escaneos de un mismo lugar</h3>
+    <p>
+      Align › Align Multiple Scans: Chain o Fixed Base, Isolate for Alignment, ICP. Donde el solapamiento es escaso,
+      use pares de puntos marcados.
+    </p>
+    <h3>Un agujero lleno de restos tras borrar una zona dañada</h3>
+    <p>
+      Marque el nuevo agujero, más grande, y rellénelo con Patch con Clean Hole First activado. Las aristas huérfanas,
+      los fragmentos y las aletas que haya dentro se eliminan antes de rellenar.
+    </p>
+    <h3>Una tubería, un cable o una planta en un muro</h3>
+    <p>
+      Seleccione sus caras, use <code>Pick Source</code> sobre un tramo limpio del mismo muro y después <code>Stamp Selected
+      Faces</code>. Para un modelo de levantamiento, ponga Relief Strength a 0: el muro continúa por debajo y no se copia
+      nada.
+    </p>
+  </section>
+
+  <section id="troubleshooting">
+    <h2>Solución de problemas</h2>
+    <table>
+      <tr><th>Síntoma</th><th>Causa probable</th><th>Qué probar</th></tr>
+      <tr><td>Mark Hole Boundary no cierra el bucle</td><td>Vértices sin soldar o una unión de borde en el contorno del agujero</td><td>Aumente Weld Distance; Repair Boundary Junctions; Weld Entire Mesh</td></tr>
+      <tr><td>Rebuild indica que faltan los ejecutables</td><td>macOS, o se eliminó la carpeta bin</td><td>Settings › Advanced › Rebuild Executables → indique PoissonRecon / SurfaceTrimmer → Check Executables</td></tr>
+      <tr><td>El parche reconstruido se hincha hacia fuera</td><td>Poisson ha rellenado una zona sin puntos</td><td>Mantenga activado Measure Trim Threshold o aumente Trim Threshold; reduzca Patch Overhang</td></tr>
+      <tr><td>Fit to Reference alcanza un límite</td><td>La colocación aproximada estaba demasiado lejos</td><td>Alinee mejor a ojo o use Rough Fit First; relaje los límites solo si confía en el resultado</td></tr>
+      <tr><td>Patch u Optimize van muy lentos</td><td>Modo Uniform en una selección grande</td><td>Curvature-Adaptive; divida la zona en secciones</td></tr>
+      <tr><td>Triángulos largos y delgados en un parche</td><td>El límite de caras detuvo el refinamiento antes de tiempo</td><td>Aumente Max Faces en Settings, o rellene por secciones</td></tr>
+      <tr><td>Barra de progreso bloqueada tras un cierre inesperado o una recarga</td><td>El estado «en ejecución» se guardó en el archivo</td><td>«Stuck? Click here» / Reset (if stuck). Nunca modifica la malla</td></tr>
+    </table>
+  </section>
+
+  <section id="debug-mode">
+    <h2>Debug Mode</h2>
+    <p>
+      En <a href="#settings">Settings › Advanced</a>, o en Advanced › Diagnostics. Mientras está activado, cada
+      operación registra lo que ha hecho, con los tiempos y los ajustes utilizados. Patch, Optimize, la alineación, Rebuild y
+      Sweep informan ahí. <code>Copy Log</code> lo copia al portapapeles para un informe de error. Saved
+      Sessions guarda el mismo registro en disco, de modo que sobrevive a un cierre inesperado.
+    </p>
+  </section>
+
+  <hr class="section-rule">
+
+  <section id="glossary">
+    <h2>Glosario</h2>
+    <table>
+      <tr><th>Término</th><th>Significado</th></tr>
+      <tr><td>Nube de referencia</td><td>Una nube de puntos métrica (normalmente un escaneo láser) que se usa como verdad de referencia para la escala, el ajuste y la reconstrucción.</td></tr>
+      <tr><td>ICP</td><td>Iterative closest point (punto más próximo iterativo): emparejar puntos, calcular la mejor transformación, repetir.</td></tr>
+      <tr><td>Volumen de recorte / sustracción</td><td>Una forma que elimina puntos de la nube, o que conserva solo los que quedan dentro de ella.</td></tr>
+      <tr><td>Screened Poisson</td><td>Una reconstrucción de superficies a partir de puntos orientados que además atrae la superficie hacia los propios puntos.</td></tr>
+      <tr><td>Bucle de borde · unión de borde</td><td>El anillo de aristas abiertas alrededor de un agujero · un punto donde se encuentran 3 o más aristas abiertas, que impide trazar el bucle.</td></tr>
+      <tr><td>Non-manifold</td><td>Una arista compartida por más de dos caras, u otra geometría que no forma una superficie limpia.</td></tr>
+      <tr><td>Geometría huérfana</td><td>Aristas y vértices sin cara, o fragmentos de caras no conectados a la malla.</td></tr>
+      <tr><td>QEM</td><td>Quadric error metrics (métricas de error cuádrico): elegir dónde queda una arista colapsada para que la forma cambie lo menos posible.</td></tr>
+      <tr><td>Fairing (alisado)</td><td>Suavizado que minimiza la variación de la curvatura, para lograr una transición realmente suave.</td></tr>
+    </table>
+  </section>
+
+  <section id="literature">
+    <h2>Bibliografía</h2>
+    <ul>
+      <li>Besl, P. J. &amp; McKay, N. D. (1992). A method for registration of 3-D shapes. <i>IEEE TPAMI</i> 14(2).</li>
+      <li>Umeyama, S. (1991). Least-squares estimation of transformation parameters between two point patterns. <i>IEEE TPAMI</i> 13(4).</li>
+      <li>Hoppe, H., DeRose, T., Duchamp, T., McDonald, J. &amp; Stuetzle, W. (1992). Surface reconstruction from unorganized points. <i>SIGGRAPH '92</i>.</li>
+      <li>Kazhdan, M. &amp; Hoppe, H. (2013). Screened Poisson surface reconstruction. <i>ACM Transactions on Graphics</i> 32(3).</li>
+      <li>Garland, M. &amp; Heckbert, P. S. (1997). Surface simplification using quadric error metrics. <i>SIGGRAPH '97</i>.</li>
+      <li>Botsch, M. &amp; Kobbelt, L. (2004). A remeshing approach to multiresolution modeling. <i>Symposium on Geometry Processing</i>.</li>
+      <li>Liepa, P. (2003). Filling holes in meshes. <i>Symposium on Geometry Processing</i>.</li>
+      <li>Pérez, P., Gangnet, M. &amp; Blake, A. (2003). Poisson image editing. <i>ACM Transactions on Graphics</i> 22(3). La fusión de bordes de Stamp.</li>
+      <li>Takayama, K., Schmidt, R., Singh, K., Igarashi, T., Boubekeur, T. &amp; Sorkine, O. (2011). GeoBrush: interactive mesh geometry cloning. <i>Computer Graphics Forum</i> 30(2). La herramienta publicada más próxima a Stamp.</li>
+      <li>Lv et al. (2022), curvature-adaptive isotropic remeshing; la base del modo de densidad Curvature-Adaptive.</li>
+      <li>Schütz, M., Ohrhallinger, S. &amp; Wimmer, M. (2020). Fast out-of-core octree generation for massive point clouds. <i>Computer Graphics Forum</i> 39(7). En él se basa la forma de leer la fuente a resolución completa.</li>
+    </ul>
+  </section>
+
+  <section id="changelog">
+    <h2>Historial de cambios</h2>
+    <p>
+      <b>v2.1.0</b>: Fabrication pasa a un complemento propio, ModelVisor. Nuevo <b>Clean Hole First</b> en Patch, que
+      elimina aristas huérfanas, fragmentos sueltos, aletas y caras que se autointersecan antes de rellenar. Correcciones
+      de Refine: el borde del agujero vuelve a estar protegido durante la limpieza, y la densidad Curvature-Adaptive se
+      conserva tras la subdivisión. Patch es mucho más rápido en escaneos grandes (una sola llamada de rotación de aristas por
+      pasada), nunca invierte un triángulo, da siempre el mismo resultado y rellena correctamente los bordes dentados. Surface
+      Fit se mantiene en el lado del propio agujero en un muro delgado. Rebuild incorpora la preparación de la nube (Remove
+      Vegetation, Align Cloud Here, Orient Normals from Mesh, Trust the Cloud Inside, Accept Replaces Covered Mesh) y
+      limpiezas del parche (Remove Drips, Regularize Walls). Novedades experimentales: <b>Fuse with Reference</b> (lleva la
+      malla sobre la nube sin construir nada nuevo), <b>Sections</b> (corta la malla en secciones y permite corregirla a mano,
+      sección a sección) y <b>Stamp</b> en Patch (aplana un elemento sobre su superficie y copia encima el relieve y la
+      textura de una fuente que usted elige). Se incluyen los ejecutables de Poisson para Windows.
+    </p>
+    <p>
+      <b>v2.0</b>: Reorganización en cinco pestañas (Reference, Align, Repair, Optimize, Finish), con modos Simple/Advanced
+      e indicaciones del siguiente paso. Novedades: nube de puntos de referencia con ajuste a escala real (ICP), submuestreo
+      en el visor, vista de esferas y volúmenes de sustracción; alineación entre escaneos con aislamiento y puntos marcados;
+      Rebuild a partir de la nube (Screened Poisson) con Accept/Reject y métricas de desviación; Settings Sweep; importación
+      desde Meshroom; lectura desde disco de la fuente a resolución completa; Smooth Surface; material de reconstrucción.
+    </p>
+    <p>
+      <b>v1.0.1</b>: Cambio de nombre desde «MeshVisor Patch». Pestaña Fabrication (ahora en ModelVisor), Auto Patch Small
+      Holes, conmutador Show Details.
+    </p>
+    <p>
+      <b>v1.0</b>: Versión inicial. Marcado de bordes y relleno de agujeros; densidad Curvature-Adaptive y Uniform;
+      Surface Fit; Seam y Material; herramientas para uniones de borde; herramientas de limpieza; pasada Finish; QEM con
+      protección de aristas vivas; Debug Mode.
+    </p>
+  </section>
+
+</div>
+
+<footer>
+  MeshVisor 2.1 · Radu Andrei, Facultad de Arquitectura, TU "Gheorghe Asachi" Iași, con Claude de Anthropic.<br>
+  «Blender» es una marca comercial de la Blender Foundation. MeshVisor es independiente y no está afiliado a ella.
+</footer>
+
+<script>
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('#toc a');
+
+  function onScroll() {
+    let currentId = null;
+    const scrollPos = window.scrollY + 120;
+    sections.forEach(sec => {
+      if (sec.offsetTop <= scrollPos) {
+        currentId = sec.id;
+      }
+    });
+    links.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + currentId);
+    });
+  }
+
+  window.addEventListener('scroll', onScroll);
+  window.addEventListener('load', onScroll);
+</script>
+
+<!-- mv-ui:body -->
+<div id="mv-ui">
+  <label for="mv-lang">Idioma</label>
+  <select id="mv-lang" aria-label="Idioma"><option value="en">English</option><option value="it">Italiano</option><option value="fr">Français</option><option value="es" selected>Español</option><option value="de">Deutsch</option></select>
+  <button id="mv-theme" type="button" title="Cambiar tema" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
+</div>
+<script>
+(function () {
+  var pages = {en: "index.html", it: "it.html", fr: "fr.html", es: "es.html", de: "de.html"};
+  document.getElementById("mv-lang").addEventListener("change", function () {
+    var l = this.value;
+    try { localStorage.setItem("mv-lang", l); } catch (e) {}
+    location.href = pages[l] + (l === "en" ? "?lang=en" : "") + location.hash;
+  });
+  document.getElementById("mv-theme").addEventListener("click", function () {
+    var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("mv-theme", next); } catch (e) {}
+  });
+})();
+</script>
+<!-- /mv-ui:body -->
+</body>
+</html>

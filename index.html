@@ -2,6 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- mv-ui:head -->
+<script>
+// theme before paint: the saved choice, otherwise dark (the guides' default)
+(function () { var t = null; try { t = localStorage.getItem("mv-theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") t = "dark"; document.documentElement.setAttribute("data-theme", t); })();
+// a reader who chose another language reads that page (the #anchor is kept)
+(function () { try {
+  if (/[?&]lang=en\b/.test(location.search)) { localStorage.setItem("mv-lang", "en"); return; }
+  var l = localStorage.getItem("mv-lang"), pages = {it: "it.html", fr: "fr.html", es: "es.html", de: "de.html"};
+  if (pages[l]) location.replace(pages[l] + location.hash);
+} catch (e) {} })();
+</script>
+<!-- /mv-ui:head -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MeshVisor — User Guide</title>
 <meta name="description" content="MeshVisor user guide: repairing scanned meshes in Blender from reference point clouds, Rebuild, Patch, Optimize.">
@@ -254,7 +267,58 @@
     #sidebar { display: none; }
     #content, footer { margin-left: 0; padding: 30px 24px 100px 24px; }
   }
+/* mv-ui:css */
+  html[data-theme="dark"] {
+    --bg: #131715;
+    --panel: #0c0f0e;
+    --panel-text: #c4ccc8;
+    --panel-text-dim: #7a8681;
+    --accent: #79b8a2;
+    --accent-bright: #8fcab4;
+    --ink: #dde3df;
+    --ink-soft: #a3ada8;
+    --rule: #2c3531;
+    --code-bg: #222a26;
+    --warn: #e0a070;
+    color-scheme: dark;
+  }
+  html[data-theme="dark"] code, html[data-theme="dark"] .kbd { color: #d6dccf; }
+  html[data-theme="dark"] .callout { background: #1b2622; }
+  html[data-theme="dark"] .callout.warn { background: #2a2019; }
+  html[data-theme="dark"] .tool-card { background: #181e1b; }
+  html[data-theme="dark"] .badge.default { background: #1f3a30; }
+  html[data-theme="dark"] .badge.slow { background: #3a2a1d; }
+  html[data-theme="dark"] .flow .step { background: #2e5a4c; }
+  html[data-theme="dark"] #sidebar { border-right: 1px solid #222a26; }
+  html[data-theme="dark"] a { color: var(--accent-bright); }
+  html[data-theme="dark"] #sidebar a { color: var(--panel-text); }
+
+  #mv-ui {
+    position: fixed; top: 12px; right: 16px; z-index: 50;
+    display: flex; gap: 8px; align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 13px;
+  }
+  #mv-ui select, #mv-ui button {
+    background: var(--bg); color: var(--ink); border: 1px solid var(--rule); border-radius: 6px;
+    height: 32px; font: inherit; cursor: pointer;
+  }
+  #mv-ui select { padding: 0 8px; }
+  #mv-ui button { width: 34px; display: flex; align-items: center; justify-content: center; padding: 0; }
+  #mv-ui button svg { width: 17px; height: 17px; }
+  #mv-ui .icon-sun { display: none; }
+  html[data-theme="dark"] #mv-ui .icon-sun { display: block; }
+  html[data-theme="dark"] #mv-ui .icon-moon { display: none; }
+  #mv-ui label { position: absolute; left: -9999px; }
+/* /mv-ui:css */
 </style>
+<!-- mv-ui:alt -->
+<link rel="alternate" hreflang="en" href="index.html">
+<link rel="alternate" hreflang="it" href="it.html">
+<link rel="alternate" hreflang="fr" href="fr.html">
+<link rel="alternate" hreflang="es" href="es.html">
+<link rel="alternate" hreflang="de" href="de.html">
+<!-- /mv-ui:alt -->
 </head>
 <body>
 
@@ -338,6 +402,20 @@
 
   <section id="philosophy">
     <h2>Philosophy</h2>
+
+    <h3>The historical truth, not a smooth surface</h3>
+    <p>
+      A scan of a building or an artefact is a document. MeshVisor makes no hidden adjustments or
+      approximations: a repair must never pass for the original. It follows the rule restorers use for
+      volumetric fills on archaeological objects: whatever was added is recognisable up close and in
+      keeping with the whole from a distance.
+    </p>
+    <ul>
+      <li>Rebuilt and patched areas can carry their own <b>reconstruction material</b>.</li>
+      <li><a href="#stamp">Stamp</a> shows its repairs in the Reconstruction Colour, toned or flat, and marks every face it changed (<code>mv_stamped</code>). Colour is never blended into the original around a repair.</li>
+      <li>Smoothing the join at an edge is allowed for geometry only, where it removes a step the scan never had, and never for colour.</li>
+      <li>Relief copied from elsewhere can be switched off (Relief Strength 0), so a survey model shows only what was measured there.</li>
+    </ul>
 
     <h3>Measurements before inventions</h3>
     <p>
@@ -712,8 +790,9 @@
     <h4 id="stamp">Stamp — copy wall relief over an element <span class="badge">experimental</span></h4>
     <p>
       Photoshop's Patch / Healing Brush, for a wall. For something fixed on a wall that should not be in the
-      model: a pipe, a cable, a lump of ivy, an icicle left by Rebuild. The element is laid flat onto the
-      wall it stands on and the stone relief of another part of the wall is put over it.
+      model: a pipe, a cable, a lump of ivy, an icicle left by Rebuild, a road marking. The element is laid
+      flat onto the surface it stands on, and the relief of another part of it is put over it. The repair
+      stays visible, as restorers leave a fill on an artefact (see <a href="#philosophy">Philosophy</a>).
     </p>
     <ol>
       <li>Select the faces of the element (with a little of the wall around it).</li>
@@ -725,17 +804,30 @@
       <tr><td>Relief Strength</td><td>How much of the source's relief is laid over. <b>0</b> copies nothing: the wall just continues smoothly under the removed element. Use 0 on a survey model, where relief that was not measured there must not appear.</td></tr>
       <tr><td>Detail Size</td><td>What counts as relief (copied from the source) and what counts as the wall's own shape (taken from around the element). About one stone. <b>0</b> = automatic: 6 edge lengths of the mesh, at least 15 cm, since a coarse mesh cannot carry shorter relief.</td></tr>
       <tr><td>Angle, Mirror, Shift Along / Up</td><td>Turn, mirror and move the source along the wall, for example to line up the courses.</td></tr>
-      <tr><td>Heal Edge</td><td>Blends the copied relief into the real relief at the edge, so it joins without a step. Off: a plain copy.</td></tr>
+      <tr><td>Heal Edge</td><td>Blends the copied relief into the real relief at the edge, so it joins without a step. Geometry only. Off: a plain copy.</td></tr>
+      <tr><td>Repair Colour</td><td>How the repaired area is coloured. <b>Toned Copy</b> (default): the source's texture, so the surface still reads, pulled toward the Reconstruction Colour. <b>Reconstruction Colour</b>: that colour alone. Either way it is never blended into the original around it.</td></tr>
+      <tr><td>Tone</td><td>How far a Toned Copy is pulled toward the Reconstruction Colour, from a quarter (never less, so it cannot pass for original) to all the way.</td></tr>
     </table>
+    <p>
+      The colour goes where the mesh keeps it: the selection's texels in the image texture (several texture
+      pages and UDIM tiles, as from Meshroom or RealityCapture, are fine), or its vertex colours. A mesh with
+      neither gets the shared <b>MeshVisor Patch</b> material on the stamped faces. The Reconstruction Colour
+      is that material's colour (<i>Mark as Reconstruction</i>, also used by Patch and Rebuild).
+    </p>
     <p>
       Only the vertices inside the selection move; the mesh keeps its faces. Stamped faces get the face
       attribute <code>mv_stamped</code> = 1, so it stays visible which relief was measured and which was copied.
-      <span class="kbd">Ctrl+Z</span> undoes it.
+      <span class="kbd">Ctrl+Z</span> undoes the geometry.
+    </p>
+    <p>
+      The repainted texture changes in memory only: save the image (<i>Image › Save</i>) to keep it.
+      <span class="kbd">Ctrl+Z</span> in Edit Mode does not undo image pixels, so <code>Restore Texture</code>
+      puts back every texel Stamp repainted in this session.
     </p>
     <div class="callout">
-      Stamp follows one plane: it is for walls, not corners or vaults, and the message warns when the area
-      around the selection is far from flat. It copies the shape, not the colour or texture. If the source
-      overlaps the selection or runs off the mesh, the message says so; move it with Shift Along / Up.
+      Stamp follows one plane: it is for walls and floors, not corners or vaults, and the message warns when
+      the area around the selection is far from flat. If the source overlaps the selection or runs off the
+      mesh, the message says so; move it with Shift Along / Up.
     </div>
   </section>
 
@@ -897,7 +989,7 @@
       big patches, then Finish.
     </p>
     <h3>Heritage object where reconstructions must stay visible</h3>
-    <p>Use <b>Mark as Reconstruction</b> (Rebuild) or <b>New 'Patch Material'</b> (Patch) with a Crisp seam.</p>
+    <p>Use <b>Mark as Reconstruction</b> (Rebuild) or <b>New 'Patch Material'</b> (Patch) with a Crisp seam. Stamp marks its repairs on its own: toned or in the Reconstruction Colour, and with the face attribute <code>mv_stamped</code>.</p>
     <h3>Several scans of one site</h3>
     <p>
       Align › Align Multiple Scans: Chain or Fixed Base, Isolate for Alignment, ICP. Where overlap is thin,
@@ -987,7 +1079,7 @@
       Mesh, Trust the Cloud Inside, Accept Replaces Covered Mesh) and patch clean-ups (Remove Drips, Regularize
       Walls). New, experimental: <b>Fuse with Reference</b> (moves the mesh onto the cloud without building
       anything new), <b>Sections</b> (slice the mesh and correct it by hand, slice by slice) and <b>Stamp</b> in
-      Patch (lay an element flat onto its wall and copy stone relief over it from a source you pick). Windows
+      Patch (lay an element flat onto its surface and copy relief and texture over it from a source you pick). Windows
       Poisson executables are bundled.
     </p>
     <p>
@@ -1036,5 +1128,27 @@
   window.addEventListener('load', onScroll);
 </script>
 
+<!-- mv-ui:body -->
+<div id="mv-ui">
+  <label for="mv-lang">Language</label>
+  <select id="mv-lang" aria-label="Language"><option value="en" selected>English</option><option value="it">Italiano</option><option value="fr">Français</option><option value="es">Español</option><option value="de">Deutsch</option></select>
+  <button id="mv-theme" type="button" title="Switch theme" aria-label="Switch theme"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
+</div>
+<script>
+(function () {
+  var pages = {en: "index.html", it: "it.html", fr: "fr.html", es: "es.html", de: "de.html"};
+  document.getElementById("mv-lang").addEventListener("change", function () {
+    var l = this.value;
+    try { localStorage.setItem("mv-lang", l); } catch (e) {}
+    location.href = pages[l] + (l === "en" ? "?lang=en" : "") + location.hash;
+  });
+  document.getElementById("mv-theme").addEventListener("click", function () {
+    var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("mv-theme", next); } catch (e) {}
+  });
+})();
+</script>
+<!-- /mv-ui:body -->
 </body>
 </html>
