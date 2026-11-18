@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MeshVisor — User Guide</title>
+<meta name="description" content="MeshVisor user guide: repairing scanned meshes in Blender from reference point clouds, Rebuild, Patch, Optimize.">
 <style>
   :root {
     --bg: #f7f5f0;
@@ -260,37 +261,46 @@
 <div id="sidebar">
   <div class="brand">
     <div class="name">MeshVisor</div>
-    <div class="tag">User Guide · v1.0</div>
+    <div class="tag">User Guide · v2.1</div>
   </div>
   <nav class="toc" id="toc">
     <a href="#intro">What It Is</a>
     <a href="#philosophy">Philosophy</a>
     <a href="#audience">Who It's For</a>
     <a href="#install">Installation</a>
-
-    <div class="group-label">Workflow</div>
     <a href="#workflow">General Flow</a>
-    <a href="#prepare-tab">Prepare Tab</a>
-    <a href="#patch-tab">Patch Tab</a>
-    <a href="#remesh-tab">Remesh Tab</a>
-    <a href="#fabrication-tab">Fabrication Tab</a>
-    <a href="#settings-popover">Settings</a>
-    <a href="#finish-popover">Finish</a>
+
+    <div class="group-label">The five tabs</div>
+    <a href="#reference-tab">Reference</a>
+    <a href="#align-tab">Align</a>
+    <a href="#repair-tab">Repair</a>
+    <a href="#repair-rebuild">&nbsp;&nbsp;Rebuild</a>
+    <a href="#repair-diagnose">&nbsp;&nbsp;Diagnose</a>
+    <a href="#repair-patch">&nbsp;&nbsp;Patch</a>
+    <a href="#stamp">&nbsp;&nbsp;&nbsp;&nbsp;Stamp</a>
+    <a href="#optimize-tab">Optimize</a>
+    <a href="#finish-tab">Finish</a>
+
+    <div class="group-label">Advanced &amp; Settings</div>
+    <a href="#advanced-research">Research</a>
+    <a href="#advanced-diagnostics">Diagnostics</a>
+    <a href="#settings">Settings</a>
 
     <div class="group-label">Key Concepts</div>
-    <a href="#presets">Presets</a>
+    <a href="#reference-scale">Reference &amp; Real Scale</a>
+    <a href="#poisson">How Rebuild Works</a>
     <a href="#density-modes">Density Modes</a>
     <a href="#surface-fit">Surface Fit</a>
     <a href="#seam-material">Seam &amp; Material</a>
 
     <div class="group-label">Using It Well</div>
-    <a href="#optimization-tips">Workflow Tips</a>
     <a href="#scenarios">Common Scenarios</a>
     <a href="#troubleshooting">Troubleshooting</a>
     <a href="#debug-mode">Debug Mode</a>
 
     <div class="group-label">Reference</div>
     <a href="#glossary">Glossary</a>
+    <a href="#literature">Literature</a>
     <a href="#changelog">Changelog</a>
   </nav>
 </div>
@@ -298,507 +308,635 @@
 <div id="content">
 
   <h1>MeshVisor</h1>
-  <div class="subtitle">Hole repair and mesh cleanup for 3D scans, built for Blender.</div>
+  <div class="subtitle">Repair scanned meshes in Blender, using the scan's own measurements.</div>
 
   <section id="intro">
     <h2>What It Is</h2>
     <p>
-      MeshVisor is a Blender addon for repairing scanned meshes and preparing them for physical
-      fabrication. It handles two main workflows: <b>mesh repair</b> (filling holes, fixing topology,
-      matching density and curvature) and <b>fabrication</b> (scaling, extending terrain to fill a
-      boundary volume, slicing into contour boards for 3D printing, CNC, or physical model-making).
+      MeshVisor is a Blender add-on for the step between a 3D scan and a usable model. Photogrammetry
+      and laser scans come out with holes where the camera could not see, flaps folded under
+      themselves, scattered junk and an arbitrary scale. MeshVisor repairs them, and wherever it can,
+      it repairs them <b>from real measurements</b> rather than from guesswork.
     </p>
     <p>
-      For <b>repair</b>: the addon automates the chain from detecting a hole's boundary through filling
-      it with geometry that matches the surrounding mesh, transferring surface detail, and general cleanup.
-      For <b>fabrication</b>: scale a scan to model size, define a boundary volume, extend the terrain
-      naturally to fill it (following its own slope, not pointed at the boundary), slice into boards, and
-      export to DXF — all from one panel.
+      Its distinctive idea is a <b>reference point cloud</b>, typically a laser scan. You fit the
+      photogrammetry mesh onto the cloud and read off its real scale. Then you rebuild damaged regions
+      from the measured points and see how far the result is from them before you accept it. For holes
+      with no reference data, a classic patch fills the gap, matching the triangle size, curvature and
+      surface detail around it.
     </p>
     <div class="callout">
-      <b>Repair:</b> select a hole's edge → <code>Mark Hole Boundary</code> → <code>Patch</code>. Density,
-      curvature, and seam are handled automatically.<br>
-      <b>Fabrication:</b> <code>Scale to Model</code> → <code>Auto-fit Boundary</code> →
-      <code>Extend &amp; Close Base</code> → <code>Generate Plates</code> → <code>Export to DXF</code>.
+      <b>Hole only:</b> Repair › Patch: select an edge of the hole → <code>Mark Hole Boundary</code> →
+      <code>Patch</code>.<br>
+      <b>With a laser scan:</b> Reference (load the cloud) → Align (<code>Fit to Reference</code>) →
+      Repair › Rebuild (<code>Rebuild &amp; Repair</code> → check the numbers → <code>Accept Repair</code>).
     </div>
+    <p>
+      Physical models (contour boards, DXF, 3D-print bases) live in the separate add-on <b>ModelVisor</b>.
+    </p>
   </section>
 
   <section id="philosophy">
     <h2>Philosophy</h2>
 
-    <h3>Grounded in the literature</h3>
+    <h3>Measurements before inventions</h3>
     <p>
-      Every significant algorithm in this addon comes from published work on geometry processing:
-      isotropic remeshing (Botsch &amp; Kobbelt), curvature-adaptive remeshing (extensions such as
-      Lv et al., 2022), quadric error metrics for simplification (Garland &amp; Heckbert, 1997), and
-      biharmonic smoothing for seams (an iterative approximation of the fairing approach used in
-      Liepa, 2003). Early versions of some of these tools used simpler, self-designed heuristics —
-      those were replaced once testing showed they didn't hold up.
+      A filled hole is a claim about a surface nobody saw. When a reference scan has real points there,
+      MeshVisor rebuilds from them. When it has none, it says so and falls back to a patch that only
+      continues the surrounding surface. The reconstructed area can carry its own material, the
+      conservation convention for fills, so it stays identifiable later.
     </p>
 
-    <h3>Safety over sophistication</h3>
+    <h3>Grounded in the literature</h3>
     <p>
-      Any step that modifies geometry has a safe fallback if something doesn't converge: an unstable
-      collapse position falls back to the edge midpoint, a degenerate curvature calculation gets
-      simply skipped. Every operator can be undone with a single
+      The main algorithms come from published geometry-processing work: isotropic and curvature-adaptive
+      remeshing, quadric error metrics, biharmonic fairing, Screened Poisson reconstruction, ICP with
+      Umeyama's closed-form similarity, PCA normals. See <a href="#literature">Literature</a>.
+    </p>
+
+    <h3>Preview, measure, then accept</h3>
+    <p>
+      Destructive steps show their result before they commit. Rebuild &amp; Repair leaves its patch as a
+      separate object with its deviation from the scan until you <b>Accept</b> or <b>Reject</b> it.
+      Selection tools select, they do not delete. Every operator is undone with a single
       <span class="kbd">Ctrl+Z</span>.
     </p>
 
-    <h3>Progressive disclosure</h3>
+    <h3>Simple first, everything still there</h3>
     <p>
-      The interface shows only what's relevant to the current step. Advanced tools — a manual
-      geometry source, the sharp-edge angle threshold, the debug log — stay available but tucked
-      away until you go looking for them, so each tab doesn't turn into a wall of options.
-    </p>
-
-    <h3>Verified before it reaches you</h3>
-    <p>
-      Changes to the addon go through a verification pass (compilation, import checks, static
-      analysis for undefined names) before being delivered. That doesn't replace real testing inside
-      Blender, but it catches a meaningful share of structural mistakes early.
+      The five tabs show the common path. Parameters that change <i>how</i> a result is produced
+      (Settings Sweep, Poisson internals, debug tools) sit in the <b>Advanced</b> zone and in
+      <b>Show Details</b>, out of the way until you need them.
     </p>
   </section>
 
   <section id="audience">
     <h2>Who It's For</h2>
-
     <h3>Good fit</h3>
     <ul>
-      <li><b>Photogrammetry scans</b> — objects, statues, artifacts, terrain/archaeological scans with holes from camera blind spots.</li>
-      <li><b>Digital restoration and heritage conservation</b> — where both filling the gap correctly and being able to flag what was reconstructed matter.</li>
-      <li><b>General cleanup of raw scan meshes</b> — non-manifold geometry, duplicates, degenerate slivers left over from processing.</li>
-      <li><b>Organic meshes of small to medium size</b> — holes up to a few thousand or a few tens of thousands of faces process at a reasonable speed.</li>
+      <li><b>Photogrammetry of buildings, ruins, monuments and terrain</b>, especially when a laser scan of the same site exists.</li>
+      <li><b>Heritage documentation and restoration</b>: reconstructions you can measure, and keep identifiable afterwards.</li>
+      <li><b>Raw scan clean-up</b>: unwelded vertices, junctions, folded flaps, loose debris, zero-area slivers.</li>
+      <li><b>Objects and artifacts</b> with holes from camera blind spots.</li>
     </ul>
-
     <h3>Less suited for</h3>
     <ul>
-      <li><b>Precision CAD modeling</b> — for exact geometric shapes (cylinders, planes, parametric relationships), Blender's native Boolean/Solidify tools or dedicated CAD software remain the better choice.</li>
-      <li><b>Very large holes</b> (upward of 50,000-70,000 selected faces) — the current architecture (pure Python, element by element) has a real speed ceiling; splitting a large hole into smaller sections works better.</li>
-      <li><b>Reconstruction straight from a raw point cloud</b> — the addon operates on an already-triangulated mesh.</li>
+      <li><b>Precision CAD</b>. Exact cylinders and planes are better made with Blender's modeling tools or CAD software.</li>
+      <li><b>Very large patches</b> (beyond roughly 50,000–70,000 faces at once). Patch and Remesh are pure Python, so split big holes into sections. Rebuild, which runs Poisson as a native program, handles large regions far better.</li>
+      <li><b>Turning a raw point cloud into a whole model.</b> Rebuild reconstructs regions; dedicated photogrammetry software is the right tool for a full model.</li>
     </ul>
   </section>
 
   <section id="install">
     <h2>Installation</h2>
     <ol>
-      <li>If you have an earlier version installed: <code>Edit → Preferences → Add-ons</code>, find "MeshVisor", click <b>Remove</b> — this fully clears the old folder from disk.</li>
-      <li>Install the new <code>.zip</code>: drag-and-drop it directly into the Blender window, or use <code>Install from Disk</code> in the same menu.</li>
-      <li>Enable the addon (checkbox next to its name).</li>
-      <li>The panel appears in the 3D viewport sidebar (<span class="kbd">N</span>), under the <b>MeshVisor</b> tab.</li>
+      <li>If an earlier version is installed: <code>Edit → Preferences → Add-ons</code>, find MeshVisor, <b>Remove</b>.</li>
+      <li>Install the <code>.zip</code>: drag it into the Blender window, or <code>Install from Disk</code> in the same menu.</li>
+      <li>Tick the checkbox to enable it. The panel is in the 3D viewport sidebar (<span class="kbd">N</span>), tab <b>MeshVisor</b>.</li>
     </ol>
+    <p>
+      Tested on Blender 4.5 – 5.3. Rebuild uses Michael Kazhdan's
+      <b>PoissonRecon</b> and <b>SurfaceTrimmer</b> (MIT licence). The Windows and Linux builds ship inside
+      the add-on. On macOS, build them from source, then point to them in
+      <a href="#settings">Settings › Advanced › Rebuild Executables</a>. <code>Check Executables</code>
+      confirms they are found.
+    </p>
     <div class="callout warn">
-      <b>Installing a new zip over an old one without Removing it first</b> can leave stale files
-      behind, since the addon is now a folder containing several files. If tools seem
-      missing or behavior looks outdated after an update, check this step first.
+      <b>Remove the old version before installing a new zip.</b> The add-on is a folder of many files, so
+      installing over an old copy can leave stale files behind.
     </div>
   </section>
-
-  <hr class="section-rule">
 
   <section id="workflow">
     <h2>General Flow</h2>
     <div class="flow">
-      <div class="step">Prepare</div><span class="arrow">→</span>
-      <div class="step">Patch</div><span class="arrow">→</span>
-      <div class="step">Remesh</div><span class="arrow">→</span>
-      <div class="step">Fabrication</div><span class="arrow">→</span>
+      <div class="step">Reference</div><span class="arrow">→</span>
+      <div class="step">Align</div><span class="arrow">→</span>
+      <div class="step">Repair</div><span class="arrow">→</span>
+      <div class="step">Optimize</div><span class="arrow">→</span>
       <div class="step">Finish</div>
     </div>
-    <p>
-      The four main tabs (Prepare, Patch, Remesh, Fabrication) map to workflow stages.
-      <b>Settings</b> and <b>Finish</b> live in small popover windows, opened from icons in the
-      header, so they don't compete for space in the main tab row.
-    </p>
     <ol>
-      <li><b>Prepare</b> — check the mesh's health, repair junctions and non-manifold geometry, clean up loose parts.</li>
-      <li><b>Patch</b> — mark a hole's boundary and fill it.</li>
-      <li><b>Remesh</b> — adjust triangle density on any current selection, whether or not it's a fresh patch.</li>
-      <li><b>Fabrication</b> — scale, define a boundary volume, extend the terrain to fill it, slice into contour boards, export to DXF. See <a href="#fabrication-tab">Fabrication Tab</a>.</li>
-      <li><b>Finish</b> — final checks: normals, remaining loose geometry, one last weld pass.</li>
+      <li><b>Reference</b>: load the reference point cloud, make it readable in the viewport, crop what you do not need.</li>
+      <li><b>Align</b>: fit the mesh onto the cloud (and recover its real scale), or align several scans onto each other.</li>
+      <li><b>Repair</b>, three sub-sections of one job:
+        <ul>
+          <li><b>Rebuild</b>: reconstruct a damaged region from the cloud.</li>
+          <li><b>Diagnose</b>: find and fix general mesh problems.</li>
+          <li><b>Patch</b>: fill a hole that has no reference data.</li>
+        </ul>
+      </li>
+      <li><b>Optimize</b>: re-adjust triangle density on a selection, typically a fresh patch.</li>
+      <li><b>Finish</b>: validate the result and fix what is left before export.</li>
     </ol>
+    <p>
+      Without a reference scan, start directly at <b>Repair</b>: Diagnose, then Patch. The header
+      shows a one-line <b>next step</b> hint, and the <b>?</b> button opens this page at the section you
+      are in. The <b>⚙</b> button opens <a href="#settings">Settings</a>. The small <b>Advanced</b>
+      toggle under the tabs opens <a href="#advanced-research">Research</a> and
+      <a href="#advanced-diagnostics">Diagnostics</a>.
+    </p>
   </section>
-  <section id="prepare-tab">
-    <h2>Prepare Tab</h2>
-    <p>This is where the mesh gets ready before marking a hole, or where general cleanup happens any time.</p>
 
+  <hr class="section-rule">
+
+  <section id="reference-tab">
+    <h2>Reference</h2>
+    <p>
+      The reference is a <b>metric point cloud</b>, usually a laser scan. It is the one thing in the scene
+      that knows real metres, so it never moves: the mesh is fitted onto it (see
+      <a href="#reference-scale">Reference &amp; Real Scale</a>).
+    </p>
+
+    <h4>1 — Load the cloud</h4>
+    <div class="tool-card">
+      <span class="tool-name">Load Point Clouds from Folder</span>
+      <p>Loads every point cloud in a folder (optionally <b>Include Subfolders</b>). Then pick the laser scan as the reference: it is the one at real scale.</p>
+    </div>
+    <div class="tool-card">
+      <span class="tool-name">Import from Meshroom <span class="badge">collapsed</span></span>
+      <p>Imports a point cloud (<code>.ply</code> or <code>.abc</code>) or a mesh, textured or plain, straight from Meshroom's output, with no CloudCompare round-trip.</p>
+    </div>
+    <div class="tool-card">
+      <span class="tool-name">Full-Resolution Source</span>
+      <p>
+        Link the original, full-density cloud file (binary PLY). Rebuild then reads only the region it needs
+        directly from disk, so the full cloud never has to be loaded into Blender. A light, thinned copy in the scene is
+        enough for viewing and fitting. <b>Source</b> chooses which data Rebuild uses: <i>Referenced</i>
+        (the file) or <i>Loaded</i> (the object in the scene).
+      </p>
+    </div>
+
+    <h4>2 — Make it readable</h4>
+    <table>
+      <tr><th>Control</th><th>What it does</th></tr>
+      <tr><td>Point Size</td><td>How big points are drawn. Only what you see changes.</td></tr>
+      <tr><td>Viewport Thinning</td><td>Points closer than this distance are drawn as one, through a Geometry Nodes modifier. Display only: fitting and Rebuild always use the real points. <b>Apply</b>, <b>Suspend</b> and <b>Reset</b> sit beside it.</td></tr>
+      <tr><td>Sphere View</td><td>Draws points as small spheres, with an adjustable radius and material, as a workaround for viewport bugs where large clouds drop points.</td></tr>
+    </table>
+
+    <h4>3 — Crop</h4>
+    <div class="tool-card">
+      <span class="tool-name">Subtraction Volumes</span>
+      <p>
+        Shapes that cut points out of the full-resolution source (<b>Cut Inside</b>) or keep only what is
+        inside them (<b>Keep Inside Only</b>). <code>Add</code> places a box, <code>Draw</code> drags one out
+        in the viewport, and <code>Convert Selected</code> turns your own meshes into volumes.
+        <code>Preview Exclusion</code> shows the result before anything is final. A <i>Keep Inside Only</i>
+        volume is also how you tell <a href="#repair-rebuild">Rebuild</a> which region to reconstruct.
+      </p>
+    </div>
+    <div class="tool-card">
+      <span class="tool-name">Delete Points in Selection's Bounding Box</span>
+      <p>Removes points from the real data, not just from the display. Tick the confirmation first.</p>
+    </div>
+  </section>
+
+  <section id="align-tab">
+    <h2>Align</h2>
+
+    <h3>Fit a mesh to the reference</h3>
+    <ol>
+      <li>Select the <b>model</b> (the photogrammetry mesh). The cloud stays put.</li>
+      <li>Line it up <b>roughly by eye</b>: ICP sharpens an alignment, it cannot find one from nothing.</li>
+      <li><code>Fit to Reference</code>. The panel reports the residual and, with <b>Recover Scale</b> on, the scale factor: what one unit of your model is worth in reality.</li>
+    </ol>
+    <p>
+      <b>Limit Scale Change</b> (5% by default) and <b>Limit Movement</b> keep the fit on a leash. After a
+      careful manual placement, a fit that wants to resize by 30% has locked onto the wrong part of the
+      cloud. When a limit is hit, the panel says so.
+    </p>
+    <h4>Advanced</h4>
+    <table>
+      <tr><th>Setting</th><th>Meaning</th></tr>
+      <tr><td>Rough Fit First</td><td>Drops the model onto the cloud's centre at roughly its size before the real fit.</td></tr>
+      <tr><td>Ignore Worst Matches</td><td>Fraction of point pairs kept each pass, closest first (0.8). The two scans never cover exactly the same ground.</td></tr>
+      <tr><td>Passes · Points Used</td><td>Iteration limit (it usually stops earlier) and sample size. Tens of thousands of well-spread points pin the fit down as well as millions.</td></tr>
+    </table>
+
+    <h3>Align multiple scans <span class="badge">collapsed</span></h3>
+    <p>For several scans of the same site, already in real units.</p>
+    <ul>
+      <li><b>Target</b> and <b>Anchor</b>: <i>Chain</i> aligns each scan to the previous one, <i>Fixed Base</i> aligns every scan to the same base.</li>
+      <li><b>Isolate for Alignment</b> shows only the source and the target, so clicks land where you mean and the viewport is lighter. <code>Exit Isolation</code> brings the scene back. It does not filter the points ICP uses.</li>
+      <li><code>Align to Target (ICP)</code>. <b>Estimate Scale</b> is off by default: scans already share units, and solving scale from partial overlap can drift.</li>
+      <li><b>Not enough overlap?</b> Mark matching points by hand with the <code>Mark Correspondence Point</code> tool, on the Source, then the Target side, then <code>Align from Marked Points</code>.</li>
+      <li><b>Lock Pair</b> parents the aligned scan to its target without moving either, so aligning a third scan to the pair later moves both together as one rigid unit.</li>
+    </ul>
+  </section>
+
+  <section id="repair-tab">
+    <h2>Repair</h2>
+    <p>
+      One task, three ways in. The small row under the tab switches between them:
+      <a href="#repair-rebuild">Rebuild</a> (from the reference cloud), <a href="#repair-diagnose">Diagnose</a>
+      (general mesh problems) and <a href="#repair-patch">Patch</a> (fill a hole without reference data).
+      The panel shows what is marked and selected, and a hint for the next step.
+    </p>
+  </section>
+
+  <section id="repair-rebuild">
+    <h2>Repair › Rebuild</h2>
+    <p>
+      Rebuilds a damaged region <b>from the measured points</b> rather than inventing geometry across the
+      gap. Around a photogrammetry hole the surface often folds back under itself, so the visible rim is
+      not the topological boundary. Filling the boundary makes a false membrane, and voxel remeshing gets
+      confused. The reference cloud has real measurements there instead.
+    </p>
+    <div class="callout">
+      Needs a reference cloud (<a href="#reference-tab">Reference</a>) that is fitted to the mesh
+      (<a href="#align-tab">Align</a>). The panel tells you if either is missing.
+    </div>
+
+    <h4>1 — Select the region</h4>
+    <ul>
+      <li><b>Rebuild</b> (cloud only, a standalone piece): select a <i>Keep Inside Only</i> crop volume, in Object Mode.</li>
+      <li><b>Rebuild &amp; Repair</b> (mesh and cloud, continuous with the mesh): also select the mesh, or in Edit Mode the vertices around the hole.</li>
+    </ul>
+
+    <h4>2 — Rebuild</h4>
+    <table>
+      <tr><th>Setting</th><th>Meaning</th></tr>
+      <tr><td>Detail</td><td>Octree depth. Each step halves the smallest feature it can represent. The octree is adaptive and refuses to go finer where it has too few points.</td></tr>
+      <tr><td>Drop Folded-Under Geometry</td><td>Discards downward-facing mesh before reconstructing, so the fold under a hole's rim cannot pull the surface down.</td></tr>
+      <tr><td>Mark as Reconstruction</td><td>Gives the new patch a distinct, neutral material (colour adjustable). This is the conservation convention, so the fill stays identifiable.</td></tr>
+    </table>
+
+    <h4>Cloud preparation <span class="badge">before Rebuild</span></h4>
+    <table>
+      <tr><th>Option</th><th>What it does</th></tr>
+      <tr><td>Remove Vegetation</td><td>Leaves ivy, weeds and bushes out of the reconstruction. <b>Green</b> uses colour (the excess-green index, so it needs a coloured cloud). <b>Scatter</b> catches points whose neighbours do not form a surface, such as dark ivy that is not green enough. <code>Preview Vegetation</code> shows in green what would be left out.</td></tr>
+      <tr><td>Align Cloud Here</td><td>Before rebuilding, fits the cloud to the mesh in this region only (local ICP) and brings the points onto it. The mesh never moves. <b>Max Move</b> stops a fit that wants to slide onto the wrong surface. Use it when a global alignment is still off by a few centimetres here.</td></tr>
+      <tr><td>Orient Normals from Mesh</td><td>Gives each cloud point the outward side of the nearest mesh surface. Normals estimated on a rough rubble wall flip at random, and the rebuild then encloses small bubbles. Rebuild &amp; Repair only.</td></tr>
+      <tr><td>Trust the Cloud Inside</td><td>Inside the selection, rebuild from the cloud alone. The mesh only provides the ring around it, so the result still meets it. For a region where the mesh is <i>wrong</i> (bulges, a wall in the wrong place), not just missing.</td></tr>
+      <tr><td>Accept Replaces Covered Mesh</td><td>On Accept, deletes the mesh faces the patch covers before joining it in. Off: the patch is added and the original stays underneath.</td></tr>
+    </table>
+    <div class="callout">
+      If the linked <b>Full-Resolution Source</b> does not match the cloud in the scene in this region (it is
+      offset, or does not cover it), Rebuild uses the cloud in the scene instead and says so. Relink the right
+      file, or redo the alignment, to get full resolution back.
+    </div>
+
+    <h4>3 — Check, clean up, then Accept or Reject</h4>
+    <p>
+      The patch stays a separate object, already measured: face count, non-manifold edges, and
+      <b>median</b> and <b>95th-percentile deviation</b> from the reference points. Before accepting, two
+      clean-ups can be run on it, and both are adjustable afterwards with <span class="kbd">F9</span>:
+    </p>
+    <ul>
+      <li><code>Remove Drips</code> removes the hanging "icicles" Poisson leaves under overhangs and openings.</li>
+      <li><code>Regularize Walls</code> straightens wall faces, either <b>Keep Relief</b> (the stones stay) or <b>Flatten</b>.</li>
+    </ul>
+    <p>
+      <code>Accept Repair</code> welds the patch into the mesh. <code>Reject</code> throws it away. Nothing is
+      finalized silently.
+    </p>
+    <p>
+      To compare several reconstructions side by side, use
+      <a href="#advanced-research">Advanced › Research</a>. The Poisson internals (stick to points, noise
+      averaging, trimming, margins, confidence weighting) are under <b>Show Details</b> and explained in
+      <a href="#poisson">How Rebuild Works</a>.
+    </p>
+
+    <h4 id="fuse">Fuse with Reference <span class="badge">experimental</span></h4>
+    <p>
+      Moves the mesh onto the reference cloud instead of rebuilding it. Nothing new is built, so there is no
+      patch to trim, review and weld: the mesh keeps its vertices, faces and UVs. In Edit Mode it works on the
+      selected vertices and fades out over a few rings around them (<b>Blend Rings</b>); in Object Mode, on the
+      whole mesh.
+    </p>
+    <ul>
+      <li>Each vertex measures how far the cloud is along its normal, and how sure that is. One smooth correction is solved for the whole region; where the cloud has no points, it is carried over from the neighbours, so no step appears where the cloud stops.</li>
+      <li>How much the correction is smoothed is measured from the data. With a noisy cloud the mesh keeps its own detail and only its drift is corrected; with a clean, dense cloud it takes the cloud's detail.</li>
+      <li><b>Thickness Guard</b> (on): on a thin wall, a face only follows points in the nearer half of the wall, so the side the scanner did not see is not pulled onto the side it did.</li>
+      <li>Holes stay holes: Patch them first, then Fuse pulls the patch onto the cloud. If the cloud reaches fewer than 5% of the vertices, nothing changes and the message says to align first.</li>
+    </ul>
+
+    <h4 id="sections">Sections <span class="badge">experimental</span></h4>
+    <p>
+      Cuts the selected part of the mesh into parallel slices, every <b>Spacing</b>, so you can see what the
+      mesh and the cloud are doing and correct the mesh by hand. Each slice shows the mesh now (green), the
+      mesh before Fuse (red), the cloud points (grey) and the editable lines (yellow), each with its own
+      on/off button; the arrows step through the slices and the view turns to face each one.
+    </p>
+    <ul>
+      <li><code>Edit Section</code>: move vertices on the yellow lines (for example, push a bulge back into line), or <code>Straighten</code> a run of them. Deleting points (<span class="kbd">X</span>) removes that part of the mesh, such as a drip hanging in front of a wall.</li>
+      <li><code>Apply to Mesh</code>: the mesh follows the lines. A moved point pulls firmly, untouched points hold back gently, so the edit stays local. The slices are then cut again from the new mesh.</li>
+    </ul>
+  </section>
+
+  <section id="repair-diagnose">
+    <h2>Repair › Diagnose</h2>
     <h3>Mesh health</h3>
     <div class="tool-card">
       <span class="tool-name">Analyze</span>
-      <p>
-        Scans the mesh once, only when you click it, so it won't slow the UI down while the panel just sits open
-        and shows a plain-language summary: whether any junctions are blocking a hole from being
-        marked, plus counts of holes, loose verts/edges, and zero-area faces.
-      </p>
+      <p>Scans the mesh once, only when clicked, and summarises holes, junctions, loose geometry and zero-area faces.</p>
     </div>
     <div class="tool-card">
-      <span class="tool-name">Auto Repair (One-Click)</span>
+      <span class="tool-name">Auto Repair</span>
+      <p>Weld Entire Mesh → Aggressive Auto-Repair of junctions → Analyze, in one go. One <span class="kbd">Ctrl+Z</span> undoes it all.</p>
+    </div>
+    <div class="tool-card">
+      <span class="tool-name">Auto Patch Small Holes</span>
+      <p>Fills every hole whose area is at or below <b>Max Hole Area</b>. That covers the dozens of tiny scan defects, while real openings bigger than the limit are left alone. <b>Scale Factor</b> adjusts the limit when 1 unit ≠ 1 metre.</p>
+    </div>
+    <div class="tool-card">
+      <span class="tool-name">Smooth Surface</span>
       <p>
-        Runs, in sequence: <code>Weld Entire Mesh</code> → <code>Aggressive Auto-Repair</code> →
-        <code>Analyze</code>. A single <span class="kbd">Ctrl+Z</span> undoes the whole pass. Handy as
-        a quick first attempt; the individual tools below stay available if anything remains.
+        Reduces reconstruction noise on flat areas (walls, floors) without rounding real edges. Edges sharper
+        than the <b>Feature Angle</b>, and every open edge, never move. Controls: <b>Strength</b>,
+        <b>Passes</b>, an optional painted <b>Vertex Group</b> for a feathered transition, and
+        <b>Selected Only</b>.
       </p>
     </div>
 
-    <h3>General cleanup</h3>
+    <h3>General clean-up</h3>
+    <table>
+      <tr><th>Tool</th><th>Selects</th></tr>
+      <tr><td>Select Loose Islands</td><td>Every disconnected piece except the largest.</td></tr>
+      <tr><td>Select Loose Edges/Verts</td><td>Wire geometry with no face.</td></tr>
+      <tr><td>Select Interior Faces</td><td>Faces tucked inside the volume (doubled "blanket" surfaces).</td></tr>
+      <tr><td>Select Downward-Facing Faces</td><td>The underside of folded flaps, within an adjustable cone.</td></tr>
+    </table>
+    <div class="callout">These tools only select. Review the selection, then delete it yourself (<span class="kbd">X</span>).</div>
+
+    <h3>Boundary health <span class="badge">check before marking a hole</span></h3>
     <table>
       <tr><th>Tool</th><th>What it does</th></tr>
-      <tr><td>Select Loose Islands</td><td>Selects chunks of mesh completely disconnected from everything else.</td></tr>
-      <tr><td>Select Loose Edges/Verts</td><td>Edges or vertices that don't belong to any face.</td></tr>
-      <tr><td>Select Interior Faces</td><td>Faces buried inside the volume, invisible from outside.</td></tr>
-      <tr><td>Select Downward-Facing Faces</td><td>Finds the underside of folded flaps, with an adjustable cone angle.</td></tr>
+      <tr><td>Repair Boundary Junctions</td><td>A safe local weld and degenerate clean-up where 3+ open edges meet.</td></tr>
+      <tr><td>Select Boundary Junctions</td><td>Shows exactly those points.</td></tr>
+      <tr><td>Aggressive Auto-Repair <span class="badge slow">higher risk</span></td><td>A wider weld, and it splits clean "two holes touching at one point" crossings.</td></tr>
+      <tr><td>Weld Entire Mesh</td><td>For raw scans that are unwelded everywhere (junctions all along an outline).</td></tr>
     </table>
+    <p><b>At a Junction, Prefer</b>: Largest or Smallest Hole decides which loop is traced when two holes touch.</p>
+  </section>
+
+  <section id="repair-patch">
+    <h2>Repair › Patch</h2>
+    <p>Fills a hole that has no reference data, matching the triangle size, curvature and surface detail around it. Works in Edit Mode.</p>
+
+    <h4>1 — Mark the hole</h4>
+    <p>
+      Select 1–3 open edges of the hole. <code>Select Full Boundary Loop</code> shows the whole outline,
+      and <code>Mark Hole Boundary</code> stores it on the mesh. <b>Weld Distance</b> merges duplicate vertices
+      first: raw scans often keep a separate vertex per face. If the loop will not close, see
+      <a href="#repair-diagnose">Boundary health</a>.
+    </p>
+
+    <h4>2 — Neighborhood</h4>
+    <p>How far from the rim the analysis looks. <code>0 m</code> means the first row of faces. A larger radius gives the surface fit more context.</p>
+
+    <h4>3 — Fill</h4>
+    <div class="tool-card">
+      <span class="tool-name">Clean Hole First <span class="badge default">on by default</span></span>
+      <p>
+        Before filling, removes orphan geometry in and around the marked hole:
+      </p>
+      <ul>
+        <li>edges and vertices with no face, such as those left after deleting a larger area with <i>Delete › Only Faces</i>;</li>
+        <li>small loose scraps of faces;</li>
+        <li>fins hanging off a non-manifold edge;</li>
+        <li>faces that cut through their neighbours near the rim.</li>
+      </ul>
+      <p>
+        If removing a face opens a separate small hole, that spot is closed again. Holes elsewhere are never
+        touched. The rim is re-traced afterwards, and the result message lists what was removed.
+      </p>
+    </div>
+    <p>
+      Choose a <a href="#density-modes">Density Mode</a>, <a href="#surface-fit">Surface Fit</a>,
+      <a href="#seam-material">Seam and Material</a>, then <code>Patch</code>. It runs in the background
+      with a progress bar (Refine → Relax → Randomize). Press <span class="kbd">Esc</span> to cancel.
+    </p>
+
+    <h4 id="stamp">Stamp — copy wall relief over an element <span class="badge">experimental</span></h4>
+    <p>
+      Photoshop's Patch / Healing Brush, for a wall. For something fixed on a wall that should not be in the
+      model: a pipe, a cable, a lump of ivy, an icicle left by Rebuild. The element is laid flat onto the
+      wall it stands on and the stone relief of another part of the wall is put over it.
+    </p>
+    <ol>
+      <li>Select the faces of the element (with a little of the wall around it).</li>
+      <li><code>Pick Source</code>, then click the part of the wall to copy from, as with Alt-click for the Clone Stamp. The 3D cursor marks the spot. The cursor button next to it uses the 3D cursor where it already is.</li>
+      <li><code>Stamp Selected Faces</code>. Then adjust in <span class="kbd">F9</span>:</li>
+    </ol>
+    <table>
+      <tr><th>Setting</th><th>Meaning</th></tr>
+      <tr><td>Relief Strength</td><td>How much of the source's relief is laid over. <b>0</b> copies nothing: the wall just continues smoothly under the removed element. Use 0 on a survey model, where relief that was not measured there must not appear.</td></tr>
+      <tr><td>Detail Size</td><td>What counts as relief (copied from the source) and what counts as the wall's own shape (taken from around the element). About one stone. <b>0</b> = automatic: 6 edge lengths of the mesh, at least 15 cm, since a coarse mesh cannot carry shorter relief.</td></tr>
+      <tr><td>Angle, Mirror, Shift Along / Up</td><td>Turn, mirror and move the source along the wall, for example to line up the courses.</td></tr>
+      <tr><td>Heal Edge</td><td>Blends the copied relief into the real relief at the edge, so it joins without a step. Off: a plain copy.</td></tr>
+    </table>
+    <p>
+      Only the vertices inside the selection move; the mesh keeps its faces. Stamped faces get the face
+      attribute <code>mv_stamped</code> = 1, so it stays visible which relief was measured and which was copied.
+      <span class="kbd">Ctrl+Z</span> undoes it.
+    </p>
     <div class="callout">
-      These tools select, they don't delete on their own. Inspect the result and delete manually
-      (<span class="kbd">X → Faces</span>) once you've confirmed it's really debris.
+      Stamp follows one plane: it is for walls, not corners or vaults, and the message warns when the area
+      around the selection is far from flat. It copies the shape, not the colour or texture. If the source
+      overlaps the selection or runs off the mesh, the message says so; move it with Shift Along / Up.
     </div>
+  </section>
 
-    <h3>Boundary health</h3>
+  <section id="optimize-tab">
+    <h2>Optimize</h2>
+    <p>
+      Re-adjusts triangle density on the selected faces, usually a fresh patch but any part of the mesh works,
+      relative to the mesh around it, then loosens the result so it does not read as a subdivided grid.
+    </p>
+    <ul>
+      <li><b>Density Mode</b>, <b>Seam</b> and <b>Material</b>: see <a href="#density-modes">Density Modes</a> and <a href="#seam-material">Seam &amp; Material</a>.</li>
+      <li><b>Min Triangle Angle</b> (18°): a floor on how thin a triangle may get during edge flips.</li>
+      <li><b>Geometry Source</b>: by default, Optimize learns size, relief and triangle shapes from the mesh bordering the selection. <code>Pick Geometry Source</code> lets you point at a more representative area instead: hover to preview a circle, scroll to resize it, click to confirm.</li>
+      <li>The face limit per run is in <a href="#settings">Settings › Performance</a> (20,000 by default).</li>
+    </ul>
+  </section>
+
+  <section id="finish-tab">
+    <h2>Finish</h2>
+    <p>Final checks, once the repair looks right.</p>
     <table>
       <tr><th>Tool</th><th>What it does</th></tr>
-      <tr><td>Repair Boundary Junctions</td><td>Local weld and cleanup around points where 3 or more open edges meet.</td></tr>
-      <tr><td>Select Boundary Junctions</td><td>Highlights exactly those problem points.</td></tr>
-      <tr><td>Aggressive Auto-Repair <span class="badge slow">higher risk</span></td><td>For scans with dozens or hundreds of junctions — a wider weld, automatic splitting at clear 4-edge crossings, and removal of short "spur" fragments.</td></tr>
-      <tr><td>Weld Entire Mesh</td><td>A global weld pass over the whole mesh — for raw scans that aren't welded anywhere (junctions scattered along the entire outline).</td></tr>
+      <tr><td>Validate Asset</td><td>Asset Health: holes, junctions, loose geometry, zero-area faces.</td></tr>
+      <tr><td>Normals</td><td>Points every face normal outward.</td></tr>
+      <tr><td>Loose Geo</td><td>Deletes vertices and edges that belong to no face.</td></tr>
+      <tr><td>Merge</td><td>One last Merge by Distance over the whole mesh (adjustable <b>Merge Distance</b>).</td></tr>
     </table>
-    <p>
-      The <b>Largest Hole / Smallest Hole</b> dropdown next to Select Boundary Junctions controls what
-      happens when boundary tracing hits a point where two holes touch tangentially: by default it
-      picks the larger hole automatically and leaves the smaller one alone (to patch separately
-      later if you want); flip it to catch the smaller one explicitly instead.
-    </p>
+    <p>Export with Blender's own <code>File › Export</code>. For contour boards and DXF for physical models, use ModelVisor.</p>
   </section>
 
-  <section id="patch-tab">
-    <h2>Patch Tab</h2>
+  <hr class="section-rule">
 
-    <h4>Step 1 — Select the hole's boundary</h4>
-    <div class="tool-card">
-      <span class="tool-name">Select Full Boundary Loop</span>
-      <p>Select 1-3 open edges around the hole, click — traces the whole outline automatically.</p>
-    </div>
-    <div class="tool-card">
-      <span class="tool-name">Mark Hole Boundary</span>
-      <p>Locks in that outline as the hole to fill (stored on the mesh, persists through saving).</p>
-    </div>
-    <p><code>Weld Distance</code> controls how close two vertices need to be to count as the same
-      point during boundary detection — raw scans often have separate per-face vertices that should
-      really be one.</p>
-
-    <h4>Step 2 — Neighborhood analysis distance</h4>
+  <section id="advanced-research">
+    <h2>Advanced › Research</h2>
     <p>
-      How far from the edge the addon looks to learn density, curvature, and real surface shape.
-      <code>0 m</code> means only the first row of adjacent faces. A larger radius gives Shrinkwrap
-      more context, but doesn't by itself change the patch's target density — that comes from the
-      density mode chosen in step 3.
-    </p>
-
-    <h4>Step 3 — Fill</h4>
-    <p>Pick a <a href="#density-modes">density mode</a> and a <a href="#surface-fit">Surface Fit</a>, then click <code>Patch</code>.</p>
-    <p>
-      Patch runs as a background process with a progress bar (Refine → Relax → Randomize) and won't
-      freeze the interface. Press <span class="kbd">Esc</span> partway through to cancel.
-    </p>
-  </section>
-
-  <section id="remesh-tab">
-    <h2>Remesh Tab</h2>
-    <p>
-      Adjusts triangle density on any current selection, whether it's a fresh patch or existing mesh — useful for
-      evening out or adapting an existing part of the mesh.
-    </p>
-
-    <h4>Advanced: Geometry Source <span class="badge">hidden by default</span></h4>
-    <p>
-      By default, Remesh reads density and curvature from whatever mesh directly borders the
-      selection. To point it at a different area instead — one with more representative detail, for
-      example — <code>Pick Geometry Source</code> gives you an eyedropper tool in the viewport, with
-      an adjustable radius (scroll to resize live).
-    </p>
-
-    <h4>Desired result</h4>
-    <p>The same <a href="#density-modes">Density Mode</a> options, plus:</p>
-    <ul>
-      <li><code>Min Triangle Angle</code> — a safety floor for diagonal flips (18° by default); lower gives more freedom to fix high-valence points but risks thin slivers.</li>
-      <li><code>Seam</code> and <code>Material</code> — see <a href="#seam-material">Seam &amp; Material</a>.</li>
-    </ul>
-
-    <h4>Run</h4>
-    <p>
-      The default face limit is 20,000 (adjustable in <a href="#settings-popover">Settings</a>, with a
-      warning past 50,000 since processing time grows quickly beyond that).
-    </p>
-  </section>
-
-  <section id="fabrication-tab">
-    <h2>Fabrication Tab</h2>
-    <p>
-      Prepares a scanned terrain model for physical fabrication — 3D printing, CNC milling, or contour-board models
-      (stacked horizontal slices that reproduce a terrain's shape in plywood, foam, or acrylic). The tab walks through five
-      sequential steps; each builds on the previous one's output.
-    </p>
-
-    <h4>Step 1 — Scale to Model</h4>
-    <p>
-      Creates a <b>copy</b> of the selected mesh scaled to a workable physical size (the original stays untouched).
-      Set either a <b>Scale Factor</b> (e.g. 0.02 = 2%) or a <b>Target Size</b> in millimeters. The scale is baked
-      directly into the geometry so Blender's own scale reads <code>(1, 1, 1)</code> — important for accurate Boolean
-      operations and plate dimensions later. Re-running replaces the previous copy instead of accumulating duplicates.
-    </p>
-
-    <h4>Step 2 — Boundary Solid</h4>
-    <p>
-      Define the volume that limits the final model. <b>Auto-fit</b> generates a cube or cylinder snugly around
-      the scaled mesh with a configurable margin (in mm). Or pick any existing mesh object manually with <b>Set Boundary</b>.
-      The boundary's role is purely geometric: it tells Extend where to stop and what shape the base should be.
-    </p>
-
-    <h4>Step 3 — Extend &amp; Close Base</h4>
-    <p>
-      The most complex step. The terrain surface is <b>continued outward</b> — following its own slope and curvature — until
-      it meets the boundary wall on every side, then closed at the bottom into a watertight solid ready for printing or milling.
-    </p>
-    <p>
-      A progress bar tracks each phase: <i>Analyzing surface → Building front → Extending → Matching density → Smoothing →
-      Adding surface texture → Cleaning sharp triangles → Finishing</i>. The extension algorithm (v1.0.1) uses <b>surface
-      continuation</b>: the direction comes from the terrain's own tangent field and curvature, not from rays pointing toward
-      the boundary. The boundary acts only as a stop limit ("here the surface ends"), not as a direction guide. This produces
-      a natural-looking join where the original terrain meets the extended region, with matching triangle density and surface
-      roughness.
-    </p>
-    <p class="aside">
-      <b>Trend Radius</b> controls how far from each rim point the algorithm looks to estimate the local slope. A smaller value
-      follows very local inclines; a larger value averages over a wider area. It's automatically capped to the boundary's own
-      size so it can't overshoot.
-    </p>
-
-    <h4>Step 4 — Generate Plates</h4>
-    <p>
-      Slices the solid horizontally into contour boards. Each board is a real, flat-bottomed mesh object positioned at its correct
-      stacked height — together they reproduce the terrain as a stack of physical layers.
+      For comparing reconstructions instead of trusting one. <b>Settings Sweep</b> runs Poisson with 2–5
+      setting combinations on the same crop volume (cloud only) and lays them out side by side. There is
+      no automatic score: a number that rewards "close to the points" favours the noisiest setting, while a
+      person sees blistering or bloating at a glance.
     </p>
     <ul>
-      <li><b>Plate Thickness</b> — the height of each layer in mm. Smaller = finer topographic detail, more boards.</li>
-      <li><b>Thickness Multiplier</b> — scales the thickness without changing the base value (useful for quick experiments).</li>
-      <li><b>Min Plate Area</b> — filters out tiny slivers below this area threshold (in mm²). Increase cautiously: real thin
-          features of the terrain can be eliminated too.</li>
-      <li><b>Smooth Contours</b> — applies Chaikin corner-cutting to the outlines, rounding off the jagged edges of a raw scan.
-          The same smoothing applies to Preview Contours, so what you preview is what you get.</li>
+      <li><code>Refine Sweep</code>: narrows the range around the variant you click.</li>
+      <li><code>Preview Variant</code>, <code>Show All</code>, delete or <code>Clear All</code> variants. The history is kept per crop volume.</li>
+      <li><code>Apply Settings from Selected</code> copies a variant's settings to Rebuild. You can also <code>Save Preset</code>, <code>Load Preset</code> or <code>Export Table (CSV)</code>.</li>
+      <li><code>Weld Selected In Place</code> welds the exact chosen variant into a mesh at its real position, rather than re-running Poisson, which would not land on the same geometry.</li>
     </ul>
-    <p>
-      A progress bar tracks the slicing. <b>Preview Contours</b> draws only the cut lines (fast, no plates built) — useful for
-      checking if the thickness gives enough detail before committing to the full generation.
-    </p>
+  </section>
 
-    <h4>Step 5 — Export to DXF</h4>
+  <section id="advanced-diagnostics">
+    <h2>Advanced › Diagnostics</h2>
     <p>
-      Lays out all boards in a grid and saves a single DXF file (R12 ASCII, no external dependencies). Each board's outline and
-      label appear on the sheet. <b>Grid Spacing</b> controls how far apart outlines sit on the layout — this only affects the DXF,
-      not the real-world stacked positions.
+      Mesh health (<code>Analyze</code>, <code>Auto Repair</code>, <code>Delete Zero-Area Faces</code>) next to
+      <a href="#debug-mode">Debug Mode</a> and its log: the "why didn't it work" layer, kept out of the
+      normal workflow.
     </p>
   </section>
 
-  <section id="settings-popover">
-    <h2>Settings <span style="font-weight:400; font-size:16px; color:var(--ink-soft);">(⚙ icon in the header)</span></h2>
+  <section id="settings">
+    <h2>Settings <span style="font-weight:400; font-size:16px; color:var(--ink-soft);">(⚙ in the header)</span></h2>
     <table>
       <tr><th>Section</th><th>Contains</th></tr>
-      <tr><td>Display</td><td><b>Show Details</b> — toggles detailed specifications, measurements, and advanced cleanup/boundary-health tools under buttons. When off, the UI shows only the essential controls. <b>Mode</b> — switch between Advanced (all tools) and Quick (minimal, automated).</td></tr>
-      <tr><td>Performance</td><td>The maximum face count Remesh will process at once.</td></tr>
-      <tr><td>Quality</td><td>The angle threshold for sharp-edge protection during simplification (35° by default) — an edge bent sharper than this is never collapsed away in Uniform mode.</td></tr>
-      <tr><td>Language</td><td>A placeholder for future multi-language support (English only for now).</td></tr>
-      <tr><td>Debug</td><td>See <a href="#debug-mode">Debug Mode</a>.</td></tr>
-    </table>
-  </section>
-
-  <section id="finish-popover">
-    <h2>Finish <span style="font-weight:400; font-size:16px; color:var(--ink-soft);">(✓ icon in the header)</span></h2>
-    <p>Final checks, for the point where a repair is basically done.</p>
-    <table>
-      <tr><th>Section</th><th>Tool</th></tr>
-      <tr><td>Normals</td><td>Recalculate Normals (Outside) — fixes areas with inverted normals.</td></tr>
-      <tr><td>Cleanup</td><td>Delete Loose Geometry — deletes, on the spot, anything that doesn't belong to a face.</td></tr>
-      <tr><td>Merge</td><td>Merge By Distance, with an adjustable threshold — one last weld pass over the whole mesh.</td></tr>
+      <tr><td>Performance</td><td><b>Max Faces (Remesh)</b>: the cap per Patch/Optimize run. A warning appears when it is set high.</td></tr>
+      <tr><td>Display</td><td><b>Show Details</b>: measurements and the finer settings under buttons.</td></tr>
+      <tr><td>Quality</td><td><b>Sharp Edge Protection</b> (35°): edges sharper than this are never collapsed during Uniform refinement.</td></tr>
+      <tr><td>Language</td><td>English.</td></tr>
+      <tr><td>Advanced</td><td><b>Rebuild Executables</b> (a folder override, plus <code>Check Executables</code>), <a href="#debug-mode">Debug Mode</a> and its log, <b>Saved Sessions</b> (logs written to disk while Debug Mode is on, so they survive a crash) and a <b>Crash Diagnostic</b> for Settings Sweep.</td></tr>
     </table>
   </section>
 
   <hr class="section-rule">
 
-  <section id="presets">
-    <h2>Presets</h2>
+  <section id="reference-scale">
+    <h2>Reference &amp; Real Scale</h2>
     <p>
-      The dropdown at the top, visible from any tab. Each preset sets Weld Distance, Min Triangle
-      Angle, Density Mode, Seam, Material, Surface Fit, and Aggressive Weld Distance in one click —
-      every value can still be adjusted individually afterward.
+      A photogrammetry reconstruction has an arbitrary scale. A laser scan is metric. MeshVisor therefore
+      treats the cloud as the reference and moves the mesh: it solves rotation, position and, with
+      <b>Recover Scale</b>, a uniform scale. This uses ICP (iterative closest point) with Umeyama's
+      closed-form similarity transform on each pass. A trimmed fraction of the worst matches is ignored,
+      because the two scans never cover exactly the same ground. The recovered factor tells you what one
+      Blender unit of your model is worth in reality.
     </p>
-    <table>
-      <tr><th>Preset</th><th>Good for</th><th>Notes</th></tr>
-      <tr>
-        <td><b>Fast Scan Cleanup</b></td>
-        <td>Raw scans, quick pass</td>
-        <td>Looser tolerances, Curvature-Adaptive for speed.</td>
-      </tr>
-      <tr>
-        <td><b>Heritage Restoration</b></td>
-        <td>Conservation work</td>
-        <td>Edges and detail are kept tight; patches get their own material ("Patch Material") so
-          they stay identifiable — standard practice in museum conservation, where a reconstruction
-          needs to remain distinguishable from the authentic original.</td>
-      </tr>
-      <tr>
-        <td><b>Organic Mesh</b></td>
-        <td>Organic shapes, smooth transitions</td>
-        <td>Smooth seam mode, more generous relaxation.</td>
-      </tr>
-      <tr>
-        <td><b>CAD Cleanup</b></td>
-        <td>Regular/mechanical shapes</td>
-        <td>Uses <b>Uniform</b> density on purpose — perfect regularity is the actual goal here, accepting the longer processing time as a deliberate trade-off.</td>
-      </tr>
-      <tr>
-        <td><b>Custom</b></td>
-        <td>Full manual control</td>
-        <td>Leaves everything as it already is.</td>
-      </tr>
-    </table>
+    <p>
+      Points with no normals, which is common in exported clouds, get them estimated: a local plane fit
+      (PCA) for each point's direction, propagated consistently across the patch for which side is out.
+      So there is no mandatory trip through CloudCompare.
+    </p>
+  </section>
+
+  <section id="poisson">
+    <h2>How Rebuild Works</h2>
+    <p>
+      Rebuild gathers the cloud's points in the region, plus a ring of good surrounding surface, the
+      <b>Context Margin</b>. Poisson needs real surface all around the gap to know which way is out. It then
+      runs <b>Screened Poisson</b> (Kazhdan &amp; Hoppe) and trims the result with <b>SurfaceTrimmer</b>.
+    </p>
+    <ul>
+      <li><b>Poisson always closes the surface.</b> Where there are no points it invents, and the invention balloons outward. Trimming removes surface below a density threshold. <b>Measure Trim Threshold</b> sets that threshold from the data, or you set it by hand.</li>
+      <li><b>Stick to Points</b> pulls the surface onto the points. More is not always better: following the points faithfully also follows their noise.</li>
+      <li><b>Noise Averaging</b> (samples per node) stops the octree from subdividing where it only has noise.</li>
+      <li><b>Patch Overhang</b> limits how far the finished patch may extend past your selection. <b>Smallest Island</b> drops trimmed confetti. <b>Cloud Points</b> caps how many points are used.</li>
+      <li><b>Confidence Weighting</b> (optional) lets detailed areas pull harder than flat, noisy ones. It is a heuristic, not a guarantee.</li>
+    </ul>
+    <p>
+      With a <b>Full-Resolution Source</b> linked, the region is read straight from the PLY file on disk, so
+      dense scans do not have to live in the .blend file.
+    </p>
   </section>
 
   <section id="density-modes">
     <h2>Density Modes</h2>
-    <p>Two established approaches from remeshing literature.</p>
-
     <h3>Curvature-Adaptive <span class="badge default">default</span></h3>
     <p>
-      Finer triangles where the real neighboring surface is more curved or detailed, coarser where
-      it's flat. The value is sampled point by point along the hole's real boundary (curvature
-      computed from the actual dihedral angle at each point) and diffused inward. Usually much
-      faster than Uniform, since it produces far fewer triangles overall.
+      Finer triangles where the real surface around the hole is curved or detailed, coarser where it is flat.
+      Targets are sampled point by point along the rim and diffused inward. It is usually much faster than
+      Uniform, because it makes fewer triangles.
     </p>
-
     <h3>Uniform (Match Neighborhood) <span class="badge slow">slower</span></h3>
-    <p>
-      One consistent triangle size across the whole patch, matching the seam — even in flat areas
-      that don't need that much density. Worth using when perfect regularity matters (mechanical
-      parts, simple geometric shapes), at the cost of producing far more triangles, which makes the
-      relax and randomize phases take proportionally longer.
-    </p>
-    <div class="callout">
-      If Patch seems to be taking a long time, check which mode is selected first. It isn't
-      necessarily a bug — Uniform is inherently more expensive on large holes by design.
-    </div>
+    <p>One consistent triangle size across the patch, matching the seam. Use it when regularity matters more than speed.</p>
   </section>
 
   <section id="surface-fit">
     <h2>Surface Fit</h2>
-    <p>How the patch gets projected onto the real surface to pick up its curvature and detail.</p>
-
+    <p>How the patch is projected onto the real surface around the hole to pick up its curvature and detail.</p>
     <h3>Project Along Normal <span class="badge default">default</span></h3>
-    <p>
-      Follows each point's normal until it finds the real surface. The search distance is bounded
-      (relative to the target triangle size), so it can't jump an unreasonable distance. Usually
-      faster than Nearest Surface and gives better results on complex terrain.
-    </p>
-
+    <p>Follows each point's normal, within a bounded distance. It is fast and reliable on complex terrain.</p>
     <h3>Nearest Surface</h3>
-    <p>
-      Searches the closest point across the entire target, with no distance cutoff — this can be
-      considerably slower on a large neighborhood. Worth trying if Project gives a worse result on
-      particularly tricky geometry, like very deep crevices or folds.
-    </p>
+    <p>Takes the closest point with no distance limit. It is slower on large neighborhoods. Try it where Project folds in deep crevices.</p>
   </section>
 
   <section id="seam-material">
     <h2>Seam &amp; Material</h2>
     <h3>Seam</h3>
     <ul>
-      <li><b>Crisp</b> — the seam stays exactly as generated, a precise, visible join.</li>
-      <li><b>Smooth</b> — a band of a few rings on both sides of the seam gets faired through an
-        iterative bi-Laplacian pass (this minimizes curvature variation across the band, a standard
-        substitute for true fairing when no sparse linear solver is available), so the join reads
-        as a smooth transition instead of a hard line.</li>
+      <li><b>Crisp</b>: the join stays exactly as generated.</li>
+      <li><b>Smooth</b>: a band on both sides of the seam is faired with an iterative bi-Laplacian pass, so the join reads as a transition rather than a line.</li>
     </ul>
     <h3>Material</h3>
     <ul>
-      <li><b>Blend In</b> — the patch takes on the majority material from its surroundings and blends into the rest of the mesh.</li>
-      <li><b>New Patch Material</b> — the patch gets its own material ("Patch Material"), visually distinct, for workflows where being able to identify exactly what was reconstructed matters.</li>
+      <li><b>Blend In</b>: the patch takes the surrounding material.</li>
+      <li><b>New 'Patch Material'</b>: a distinct material, so the repair stays identifiable.</li>
     </ul>
   </section>
 
   <hr class="section-rule">
 
-  <section id="optimization-tips">
-    <h2>Workflow Tips</h2>
-    <ol>
-      <li>Run <b>Analyze</b> before anything else, so junctions get flagged before Mark Hole Boundary fails on them.</li>
-      <li>For large holes (past roughly 30,000-40,000 selected faces), box-select smaller sections and run Remesh on each one separately — the current Python, element-by-element architecture has a real speed ceiling at that scale.</li>
-      <li>Start with <b>Curvature-Adaptive</b> almost every time — it's faster and usually more faithful to the real geometry than Uniform. Save Uniform for cases where perfect regularity matters more than curvature fidelity, like mechanical parts.</li>
-      <li><b>Project Along Normal</b> is a solid default, but on very complex geometry (deep crevices) with visible folding, try Nearest Surface on that specific area.</li>
-      <li>Run <b>Weld Entire Mesh</b> once, early, when working on a raw unwelded scan — this avoids running into fresh junctions repeatedly as you move between different holes on the same object.</li>
-      <li>Treat a preset as a starting point — adjust individual parameters once the first result is visible.</li>
-      <li>Turn on <b>Debug Mode</b> before a testing session where several setting combinations are being compared — the log automatically records every setting used per run, along with processing time.</li>
-    </ol>
-  </section>
-
   <section id="scenarios">
     <h2>Common Scenarios</h2>
-
-    <h3>Archaeological or terrain scan, very raw</h3>
-    <p>Preset <b>Fast Scan Cleanup</b> → <code>Weld Entire Mesh</code> first (likely unwelded across the whole outline) → Analyze → repair remaining junctions individually if Aggressive Auto-Repair doesn't catch everything.</p>
-
-    <h3>Small, highly detailed object (statue, artifact)</h3>
-    <p>Preset <b>Heritage Restoration</b> → a larger neighborhood radius in Patch step 2 for richer curvature context → Crisp seam, so the repair stays identifiable.</p>
-
-    <h3>CAD mesh, mechanical parts</h3>
-    <p>Preset <b>CAD Cleanup</b> → density mode stays Uniform on purpose → a higher Min Triangle Angle to avoid irregular shapes → accept the longer processing time as the price of regularity.</p>
-
-    <h3>Organic object, complex shape (terrain with folds, creatures)</h3>
-    <p>Preset <b>Organic Mesh</b> → Smooth seam → if folding shows up on very concave areas, switch Surface Fit to Nearest Surface just there.</p>
-
-    <h3>Very large hole (tens of thousands of faces)</h3>
-    <p>Box-select smaller portions of the selection → run Remesh on each section separately → only raise the limit in Settings if you're prepared to wait (the warning appears past 50,000).</p>
+    <h3>Building or ruin: photogrammetry plus a laser scan</h3>
+    <p>
+      Reference: load the clouds, link the full-resolution PLY, thin the display. Align: move the mesh close
+      by eye, then <code>Fit to Reference</code> with Recover Scale. Repair › Rebuild: draw a
+      <i>Keep Inside Only</i> volume over the damage, run <code>Rebuild &amp; Repair</code>, read the
+      deviation, then Accept. For a stubborn area, run a Settings Sweep in Advanced first.
+    </p>
+    <h3>Raw scan, no reference</h3>
+    <p>
+      Repair › Diagnose: <code>Weld Entire Mesh</code>, then <code>Analyze</code>, then
+      <code>Auto Patch Small Holes</code>. Next, Patch each real hole with Clean Hole First on. Optimize the
+      big patches, then Finish.
+    </p>
+    <h3>Heritage object where reconstructions must stay visible</h3>
+    <p>Use <b>Mark as Reconstruction</b> (Rebuild) or <b>New 'Patch Material'</b> (Patch) with a Crisp seam.</p>
+    <h3>Several scans of one site</h3>
+    <p>
+      Align › Align Multiple Scans: Chain or Fixed Base, Isolate for Alignment, ICP. Where overlap is thin,
+      use marked point pairs.
+    </p>
+    <h3>A hole full of leftovers after deleting a damaged area</h3>
+    <p>
+      Mark the new, larger hole and Patch with Clean Hole First on. Orphan edges, scraps and fins inside it
+      are removed before filling.
+    </p>
+    <h3>A pipe, cable or plant on a wall</h3>
+    <p>
+      Select its faces, <code>Pick Source</code> on a clean stretch of the same wall, <code>Stamp Selected
+      Faces</code>. For a survey model, set Relief Strength to 0: the wall continues underneath and nothing
+      is copied.
+    </p>
   </section>
 
   <section id="troubleshooting">
     <h2>Troubleshooting</h2>
     <table>
       <tr><th>Symptom</th><th>Likely cause</th><th>What to try</th></tr>
-      <tr>
-        <td>Mark Hole Boundary marks the wrong, small piece</td>
-        <td>The click landed on a separate fragment that happens to sit spatially close to the real hole</td>
-        <td>Check the Largest/Smallest Hole dropdown; run Analyze and Repair Boundary Junctions first</td>
-      </tr>
-      <tr>
-        <td>Patch result has long, thin, spiky triangles</td>
-        <td>Refinement stopped early (face limit reached) before finishing subdivision</td>
-        <td>Raise the limit in Settings, or split the hole into smaller sections</td>
-      </tr>
-      <tr>
-        <td>The patched surface looks folded or overlaps itself</td>
-        <td>Nearest Surface found the closest point on a different part of the surface, in a complex concave area</td>
-        <td>Switch to Project Along Normal</td>
-      </tr>
-      <tr>
-        <td>Remesh is very slow</td>
-        <td>Uniform density mode on a large selection</td>
-        <td>Try Curvature-Adaptive</td>
-      </tr>
-      <tr>
-        <td>Progress bar stuck visually after a crash or reload</td>
-        <td>The "running" state was saved into the file</td>
-        <td>The "Stuck? Click here" button in the panel resets the state without touching the mesh</td>
-      </tr>
+      <tr><td>Mark Hole Boundary does not close the loop</td><td>Unwelded vertices or a junction on the rim</td><td>Raise Weld Distance; Repair Boundary Junctions; Weld Entire Mesh</td></tr>
+      <tr><td>Rebuild says executables are missing</td><td>macOS, or the bin folder was removed</td><td>Settings › Advanced › Rebuild Executables → point to PoissonRecon / SurfaceTrimmer → Check Executables</td></tr>
+      <tr><td>Rebuilt patch balloons outward</td><td>Poisson filled an area without points</td><td>Keep Measure Trim Threshold on, or raise Trim Threshold; tighten Patch Overhang</td></tr>
+      <tr><td>Fit to Reference hits a limit</td><td>The rough placement was too far off</td><td>Align better by eye, or use Rough Fit First; relax the limits only if you trust it</td></tr>
+      <tr><td>Patch or Optimize is very slow</td><td>Uniform mode on a large selection</td><td>Curvature-Adaptive; split the area into sections</td></tr>
+      <tr><td>Long, thin triangles in a patch</td><td>The face limit stopped refinement early</td><td>Raise Max Faces in Settings, or patch in sections</td></tr>
+      <tr><td>Progress bar stuck after a crash or reload</td><td>The "running" state was saved in the file</td><td>"Stuck? Click here" / Reset (if stuck). It never touches the mesh</td></tr>
     </table>
   </section>
 
   <section id="debug-mode">
     <h2>Debug Mode</h2>
     <p>
-      Turned on from <a href="#settings-popover">Settings</a>. From then on, every Patch/Remesh run
-      records a log line in memory: exact timestamp, processing time, every setting used (density
-      mode, Surface Fit, distances, angles, preset), the result, and internal counters (how many
-      edge flips were accepted or rejected, how many QEM solver fallbacks happened and why).
-    </p>
-    <p>
-      The <code>Copy Log</code> button copies the whole log straight to the clipboard — useful for
-      comparing setting combinations quickly, or for reporting an issue with full context.
+      In <a href="#settings">Settings › Advanced</a>, or in Advanced › Diagnostics. While it is on, every
+      operation logs what it did, with timings and the settings used. Patch, Optimize, alignment, Rebuild and
+      Sweep all report there. <code>Copy Log</code> puts it on the clipboard for a bug report. Saved
+      Sessions keep the same log on disk, so it survives a crash.
     </p>
   </section>
 
@@ -808,43 +946,73 @@
     <h2>Glossary</h2>
     <table>
       <tr><th>Term</th><th>Meaning</th></tr>
-      <tr><td>Boundary loop</td><td>The outline (loop of open edges) that borders a hole in the mesh.</td></tr>
-      <tr><td>Junction</td><td>A point where 3 or more open edges meet — a sign of non-manifold geometry, and a blocker for normal boundary tracing.</td></tr>
-      <tr><td>Non-manifold</td><td>Geometry that doesn't describe a topologically clean surface (edges shared by more than 2 faces, junctions, and so on).</td></tr>
-      <tr><td>Shrinkwrap</td><td>Blender's native modifier, used here to project the patch onto the real surrounding surface.</td></tr>
-      <tr><td>QEM (Quadric Error Metrics)</td><td>A method (Garland &amp; Heckbert, 1997) for choosing the optimal merge position when simplifying an edge, derived from the surrounding face planes — keeps the real shape closer than a plain average would.</td></tr>
-      <tr><td>Discrete curvature</td><td>Approximated here from the dihedral angle — the angle between the normals of two adjacent faces; near 0° for flat areas, larger for curved or sharp ones.</td></tr>
-      <tr><td>Fairing / biharmonic smoothing</td><td>Smoothing that minimizes curvature variation for a genuinely smooth transition, rather than a plain positional average.</td></tr>
-      <tr><td>Zero-area face</td><td>A topologically valid triangle whose three vertices are overlapping or collinear — it occupies no real surface area and can interfere with normals, UVs, or export.</td></tr>
-      <tr><td>Weld / merge by distance</td><td>Merging vertices closer than a given distance — corrects scans where every face carries its own unwelded vertices.</td></tr>
+      <tr><td>Reference cloud</td><td>A metric point cloud (usually a laser scan) used as ground truth for scale, fitting and reconstruction.</td></tr>
+      <tr><td>ICP</td><td>Iterative closest point: match points, solve the best transform, repeat.</td></tr>
+      <tr><td>Crop / subtraction volume</td><td>A shape that cuts points out of the cloud, or keeps only those inside it.</td></tr>
+      <tr><td>Screened Poisson</td><td>A surface reconstruction from oriented points that also pulls the surface onto the points themselves.</td></tr>
+      <tr><td>Boundary loop · junction</td><td>The ring of open edges around a hole · a point where 3+ open edges meet, which blocks tracing.</td></tr>
+      <tr><td>Non-manifold</td><td>An edge shared by more than two faces, or other geometry that is not a clean surface.</td></tr>
+      <tr><td>Orphan geometry</td><td>Edges and vertices with no face, or scraps of faces not connected to the mesh.</td></tr>
+      <tr><td>QEM</td><td>Quadric error metrics: choosing where a collapsed edge lands so the shape changes least.</td></tr>
+      <tr><td>Fairing</td><td>Smoothing that minimises curvature variation, for a genuinely smooth transition.</td></tr>
     </table>
+  </section>
+
+  <section id="literature">
+    <h2>Literature</h2>
+    <ul>
+      <li>Besl, P. J. &amp; McKay, N. D. (1992). A method for registration of 3-D shapes. <i>IEEE TPAMI</i> 14(2).</li>
+      <li>Umeyama, S. (1991). Least-squares estimation of transformation parameters between two point patterns. <i>IEEE TPAMI</i> 13(4).</li>
+      <li>Hoppe, H., DeRose, T., Duchamp, T., McDonald, J. &amp; Stuetzle, W. (1992). Surface reconstruction from unorganized points. <i>SIGGRAPH '92</i>.</li>
+      <li>Kazhdan, M. &amp; Hoppe, H. (2013). Screened Poisson surface reconstruction. <i>ACM Transactions on Graphics</i> 32(3).</li>
+      <li>Garland, M. &amp; Heckbert, P. S. (1997). Surface simplification using quadric error metrics. <i>SIGGRAPH '97</i>.</li>
+      <li>Botsch, M. &amp; Kobbelt, L. (2004). A remeshing approach to multiresolution modeling. <i>Symposium on Geometry Processing</i>.</li>
+      <li>Liepa, P. (2003). Filling holes in meshes. <i>Symposium on Geometry Processing</i>.</li>
+      <li>Pérez, P., Gangnet, M. &amp; Blake, A. (2003). Poisson image editing. <i>ACM Transactions on Graphics</i> 22(3). The edge blending in Stamp.</li>
+      <li>Takayama, K., Schmidt, R., Singh, K., Igarashi, T., Boubekeur, T. &amp; Sorkine, O. (2011). GeoBrush: interactive mesh geometry cloning. <i>Computer Graphics Forum</i> 30(2). The closest published tool to Stamp.</li>
+      <li>Lv et al. (2022), curvature-adaptive isotropic remeshing, the basis of the Curvature-Adaptive density mode.</li>
+      <li>Schütz, M., Ohrhallinger, S. &amp; Wimmer, M. (2020). Fast out-of-core octree generation for massive point clouds. <i>Computer Graphics Forum</i> 39(7). It informs how the full-resolution source is read.</li>
+    </ul>
   </section>
 
   <section id="changelog">
     <h2>Changelog</h2>
     <p>
-      <b>v1.0.1</b> — Renamed from "MeshVisor Patch" to <b>MeshVisor</b>. New <b>Fabrication Tab</b>: Scale to Model,
-      Boundary Solid (auto-fit cube/cylinder), Extend &amp; Close Base (surface continuation algorithm — extends terrain
-      following its own slope and curvature, not toward the boundary wall), Generate Plates (contour-board slicing with
-      progress bar), Preview Contours, Export to DXF. Progress bars on Extend and Generate Plates. <b>Show Details</b>
-      toggle in Settings replaces the old Wizard/Advanced mode selector — cleaner, user-controlled. Auto Patch Small Holes
-      with progress bar. Degenerate-plate cleanup (zero-area faces, near-duplicate loop points). Surface roughness matching
-      on extended regions. Sharp-triangle cleanup. Multiple watertightness safety nets with automatic revert.
+      <b>v2.1.0</b>: Fabrication moved to its own add-on, ModelVisor. New <b>Clean Hole First</b> in Patch,
+      which removes orphan edges, loose scraps, fins and self-intersecting faces before filling. Refine
+      fixes: the hole's rim is protected again during clean-up, and Curvature-Adaptive density survives
+      subdivision. Patch is much faster on large scans (one edge-rotate call per pass), never turns a triangle
+      over, gives the same result every time, and fills jagged rims properly. Surface Fit stays on the hole's own
+      side of a thin wall. Rebuild gets cloud preparation (Remove Vegetation, Align Cloud Here, Orient Normals from
+      Mesh, Trust the Cloud Inside, Accept Replaces Covered Mesh) and patch clean-ups (Remove Drips, Regularize
+      Walls). New, experimental: <b>Fuse with Reference</b> (moves the mesh onto the cloud without building
+      anything new), <b>Sections</b> (slice the mesh and correct it by hand, slice by slice) and <b>Stamp</b> in
+      Patch (lay an element flat onto its wall and copy stone relief over it from a source you pick). Windows
+      Poisson executables are bundled.
     </p>
     <p>
-      <b>v1.0</b> — Initial release. Boundary marking and hole filling; Remesh with Curvature-Adaptive
-      and Uniform density modes; Surface Fit (Project Along Normal / Nearest Surface); Seam and
-      Material handling; junction detection and repair, including Aggressive Auto-Repair and a
-      whole-mesh weld; general cleanup tools; Presets; Analyze and Auto Repair; a Finish pass
-      (normals, loose geometry, final merge); sharp-edge protection during simplification (QEM);
-      Debug Mode; speed optimizations for large selections.
+      <b>v2.0</b>: Reorganised into five tabs (Reference, Align, Repair, Optimize, Finish), with Simple/Advanced
+      and next-step hints. New: reference point cloud with real-scale fitting (ICP), viewport thinning, sphere
+      view and subtraction volumes; scan-to-scan alignment with isolation and marked points; Rebuild from the
+      cloud (Screened Poisson) with Accept/Reject and deviation metrics; Settings Sweep; Meshroom import;
+      full-resolution source read from disk; Smooth Surface; reconstruction material.
+    </p>
+    <p>
+      <b>v1.0.1</b>: Renamed from "MeshVisor Patch". Fabrication tab (now in ModelVisor), Auto Patch Small
+      Holes, Show Details toggle.
+    </p>
+    <p>
+      <b>v1.0</b>: Initial release. Boundary marking and hole filling; Curvature-Adaptive and Uniform density;
+      Surface Fit; Seam and Material; junction tools; clean-up tools; Finish pass; QEM with sharp-edge
+      protection; Debug Mode.
     </p>
   </section>
 
 </div>
 
 <footer>
-  MeshVisor — internal documentation. Open this file directly in any browser, or publish it through GitHub Pages for a shareable link.
+  MeshVisor 2.1 · Radu Andrei, Faculty of Architecture, TU "Gheorghe Asachi" Iași, with Claude by Anthropic.<br>
+  "Blender" is a trademark of the Blender Foundation. MeshVisor is independent and not affiliated with it.
 </footer>
 
 <script>
